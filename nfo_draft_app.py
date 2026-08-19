@@ -338,7 +338,7 @@ with st.sidebar:
     if source == "Live MFL room":
         room_url = st.text_input(
             "Auction room / league URL",
-            value="https://www47.myfantasyleague.com/2025/ajax_la?L=74988",
+            value="",
             help="Any URL containing L=<league id> works — live OR completed. The app "
                  "reads the full auction from MFL's export API, so a finished room still "
                  "gives you every pick. The year/server number changes each season.")
