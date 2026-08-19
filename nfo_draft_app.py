@@ -29,8 +29,7 @@ except Exception:
     HAS_AUTOREFRESH = False
 
 HERE = Path(__file__).resolve().parent
-DEMO_MSG = (
-)
+DEMO_MSG = ""
 
 st.set_page_config(page_title="NFO Live Auction", page_icon="🏈", layout="wide")
 
