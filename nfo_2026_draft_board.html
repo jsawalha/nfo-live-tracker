@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFO 2026 Draft Board</title>
+<script>
+  /* set layout class before first paint (no flash). auto = follow screen width. */
+  try{
+    var _v=localStorage.getItem('nfo26_view')||'auto';
+    var _eff=_v==='auto'?(matchMedia('(max-width:640px)').matches?'cards':'table'):_v;
+    if(_eff==='cards')document.documentElement.classList.add('view-cards');
+  }catch(e){}
+</script>
+<style>
+  :root{
+    --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#f2f1ec;
+    --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+    --accent:#2a78d6; --good:#0ca30c; --warn:#c98500; --crit:#d03b3b; --star:#eda100;
+    --rb:#2a78d6; --wr:#1baf7a; --qb:#eb6834; --te:#4a3aa7;
+    --shadow:0 1px 2px rgba(11,11,11,.04),0 4px 16px rgba(11,11,11,.05);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232320;
+      --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.12);
+      --accent:#3987e5; --good:#0ca30c; --warn:#eda100; --crit:#e66767; --star:#eda100;
+      --rb:#3987e5; --wr:#199e70; --qb:#d95926; --te:#9085e9; --shadow:none;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--page);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+  h1{font-size:1.3rem;margin:0;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:.8rem;margin:2px 0 0}
+  header{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:var(--shadow)}
+  .hd-in{max-width:1240px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .hd-stats{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .stat{background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:6px 12px;text-align:center;min-width:70px}
+  .stat .v{font-size:1.1rem;font-weight:650;line-height:1.1;font-variant-numeric:tabular-nums}
+  .stat .k{font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:2px}
+  .stat.over .v{color:var(--crit)}
+  .wrap{max-width:1240px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  input,select{font:inherit;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)}
+  input[type=search]{flex:1;min-width:150px}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface)}
+  .seg button{border:0;background:transparent;color:var(--ink-2);padding:8px 12px;cursor:pointer;font:inherit;font-size:.85rem}
+  .seg button.on{background:var(--accent);color:#fff}
+  .toggle{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:var(--ink-2);cursor:pointer;
+    border:1px solid var(--border);border-radius:8px;padding:7px 11px;background:var(--surface);user-select:none}
+  .toggle.on{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent);color:var(--ink)}
+  .toggle input{display:none}
+  .metric-note{margin:-4px 0 12px;font-size:.78rem;color:var(--muted)}
+  .metric-note b{color:var(--ink-2)}
+  .mkt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--surface);
+    border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin:0 0 12px;box-shadow:var(--shadow)}
+  .mkt-lab{font-size:.8rem;font-weight:600;color:var(--ink-2)}
+  .mkt input{width:88px;padding:6px 8px}
+  .mkt button{border:1px solid var(--border);background:var(--surface);color:var(--ink-2);
+    border-radius:7px;padding:6px 9px;cursor:pointer;font:inherit;font-size:.78rem}
+  .mkt button:hover{border-color:var(--axis)}
+  .mkt-out{font-size:.82rem;color:var(--ink-2)}
+  .mkt-out .hot{color:var(--crit);font-weight:700}
+  .mkt-out .cool{color:var(--accent);font-weight:700}
+  .mkt-out .bal{color:var(--good);font-weight:700}
+  .mkt-out .dim{color:var(--muted)}
+
+  .tbl-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse;width:100%;font-size:.86rem;min-width:600px}
+  th,td{padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grid)}
+  th:nth-child(2),td:nth-child(2){text-align:left;white-space:normal}
+  thead th{position:sticky;top:0;background:var(--surface);color:var(--ink-2);z-index:1;font-size:.68rem;
+    text-transform:uppercase;letter-spacing:.04em;cursor:pointer;user-select:none;border-bottom:1px solid var(--axis)}
+  thead th.sortable::after{content:"↕";opacity:.3;margin-left:4px}
+  thead th.asc::after{content:"↑";opacity:1}thead th.desc::after{content:"↓";opacity:1}
+  tbody tr:hover{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+  tbody tr.watched{background:color-mix(in srgb,var(--star) 13%,transparent)}
+  tbody tr.watched td:first-child{box-shadow:inset 3px 0 0 var(--star)}
+  tbody tr.picked{background:color-mix(in srgb,var(--good) 13%,transparent)}
+  tbody tr.gone{opacity:.4}
+  tbody tr.gone .name{text-decoration:line-through}
+  td{font-variant-numeric:tabular-nums}
+  .pos{display:inline-block;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:99px;color:#fff}
+  .pos.RB{background:var(--rb)}.pos.WR{background:var(--wr)}.pos.QB{background:var(--qb)}.pos.TE{background:var(--te)}
+  .price{font-weight:650}
+  .buy{color:var(--good);font-weight:600}
+  .walk{color:var(--crit);font-weight:600}
+  .rng{color:var(--muted);font-size:.78rem}
+  .name{font-weight:600}
+  .acts{display:inline-flex;gap:4px}
+  .act{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--surface);
+    color:var(--ink-2);font-size:.95rem;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+  .act:hover{border-color:var(--axis)}
+  .act.star.on{background:var(--star);color:#fff;border-color:transparent}
+  .act.draft.on{background:var(--good);color:#fff;border-color:transparent}
+  .act.gone.on{background:var(--crit);color:#fff;border-color:transparent}
+  .empty{padding:32px;text-align:center;color:var(--muted)}
+  .tier-b.tgone{opacity:.3;text-decoration:line-through}
+  .tier-b b{font-weight:800;font-variant-numeric:tabular-nums}
+  /* tier chips: one hue, T1 strongest -> T8 faintest */
+  .tchip{display:inline-block;min-width:19px;text-align:center;font-size:.6rem;font-weight:800;
+         padding:1px 3px;border-radius:4px;margin-right:5px;vertical-align:middle;
+         border:1px solid transparent}
+  .tchip.t1{background:#7c3aed;color:#fff}
+  .tchip.t2{background:#9061f0;color:#fff}
+  .tchip.t3{background:#a78bfa;color:#1e1046}
+  .tchip.t4{background:#c4b5fd;color:#2e1065}
+  .tchip.t5{background:#ddd6fe;color:#3b1f7a}
+  .tchip.t6{background:var(--surface-2);color:var(--ink-2);border-color:var(--border)}
+  .tchip.t7,.tchip.t8{background:transparent;color:var(--muted);border-color:var(--border)}
+  .tchip.t0{background:transparent;color:var(--muted);border-color:transparent;opacity:.4}
+
+  .side{position:sticky;top:76px;display:flex;flex-direction:column;gap:16px}
+  @media(max-width:900px){.side{position:static}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:16px}
+  .card h2{font-size:1rem;margin:0 0 4px;display:flex;justify-content:space-between;align-items:baseline}
+  .meter{height:9px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:10px 0 4px}
+  .meter>i{display:block;height:100%;background:var(--accent);transition:width .2s,background .2s}
+  .meter.over>i{background:var(--crit)}
+  .budget-row{display:flex;justify-content:space-between;font-size:.8rem;color:var(--ink-2)}
+  .maxbid{font-size:.75rem;color:var(--muted);margin-top:6px}
+  .reqs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 0 0}
+  .req{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:.78rem;display:flex;justify-content:space-between;align-items:center}
+  .req .cnt{font-variant-numeric:tabular-nums}
+  .req.ok .cnt{color:var(--good)}.req.short .cnt{color:var(--warn)}
+  .slot-list{margin:12px 0 0;max-height:36vh;overflow-y:auto}
+  .slot-group{margin-bottom:6px}
+  .slot-h{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:6px 0 3px}
+  .pick{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;font-size:.82rem}
+  .pick:hover{background:var(--surface-2)}
+  .pick .x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;padding:0 2px}
+  .pick .x:hover{color:var(--crit)}
+  .pick .pp{font-variant-numeric:tabular-nums;color:var(--ink-2)}
+  .warn{font-size:.78rem;padding:8px 10px;border-radius:8px;margin-top:10px;display:none}
+  .warn.show{display:block}
+  .warn.bad{background:color-mix(in srgb,var(--crit) 12%,transparent);color:var(--crit)}
+  .warn.good{background:color-mix(in srgb,var(--good) 12%,transparent);color:var(--good)}
+  .warn.info{background:var(--surface-2);color:var(--ink-2)}
+  .clear{width:100%;margin-top:12px;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink-2);cursor:pointer;font:inherit}
+  .clear:hover{color:var(--crit);border-color:var(--crit)}
+  .watch-empty{color:var(--muted);font-size:.82rem}
+  .tier-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:.78rem;flex-wrap:wrap}
+  .tier-row .pos{min-width:26px;text-align:center}
+  .tier-b{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;
+    padding:1px 6px;font-variant-numeric:tabular-nums;font-size:.72rem}
+  .tier-b.warn{background:color-mix(in srgb,var(--warn) 22%,transparent);border-color:var(--warn);font-weight:700}
+  .tier-b.crit{background:color-mix(in srgb,var(--crit) 20%,transparent);border-color:var(--crit);
+    color:var(--crit);font-weight:700}
+  .cliff{font-size:.72rem;margin-left:auto;white-space:nowrap}
+  .cliff.soon{color:var(--warn);font-weight:700}
+  .cliff.now{color:var(--crit);font-weight:700}
+  .foot{max-width:1240px;margin:8px auto 40px;padding:0 16px;color:var(--muted);font-size:.75rem}
+  .foot b{color:var(--ink-2)}
+
+  /* ---------- card layout: table rows become stacked cards (no side-scroll) ----------
+     Driven by a .view-cards class on <html> (set by JS), so it can be forced on any
+     screen size via the Auto/Table/Cards toggle — not only under a media query. */
+  .view-cards .hd-in{gap:8px}
+  .view-cards h1{font-size:1.15rem}
+  .view-cards .hd-stats{width:100%;margin-left:0;gap:5px}
+  .view-cards .stat{flex:1;min-width:0;padding:5px 3px}
+  .view-cards .stat .v{font-size:.95rem}
+  .view-cards .stat .k{font-size:.54rem}
+  .view-cards .wrap{padding:12px}
+  .view-cards .filters{gap:6px}
+  .view-cards input[type=search]{min-width:100%;order:-1}
+  .view-cards .toggle{flex:1;justify-content:center}
+  .view-cards table,.view-cards thead,.view-cards tbody,.view-cards tr,.view-cards td{display:block}
+  .view-cards table{min-width:0}
+  .view-cards thead{display:none}
+  .view-cards .tbl-scroll{overflow-x:visible}
+  .view-cards tbody tr{display:flex;flex-wrap:wrap;align-items:center;row-gap:4px;column-gap:8px;padding:11px 13px}
+  .view-cards tbody td{border:none;padding:0;white-space:normal;text-align:left}
+  .view-cards td.td-pos{order:1}
+  .view-cards td.td-name{order:2;flex:1 1 60px}
+  .view-cards td.td-acts{order:3}
+  .view-cards td.td-adp{order:4;color:var(--muted);font-size:.74rem}
+  .view-cards td.td-adp::before{content:"ADP "}
+  .view-cards td.td-rd{order:5;color:var(--muted);font-size:.74rem}
+  .view-cards td.td-rd::before{content:"· Rd "}
+  .view-cards td.td-price{order:6;margin-left:auto;font-size:.95rem}
+  .view-cards td.td-buy{order:7}
+  .view-cards td.td-buy::before{content:"buy ≤";color:var(--muted);font-weight:400;margin-right:3px}
+  .view-cards td.td-walk{order:8}
+  .view-cards td.td-walk::before{content:" · walk ";color:var(--muted);font-weight:400}
+  .view-cards .act{width:36px;height:36px;font-size:1.1rem}
+  .view-cards tbody tr.watched td.td-name{box-shadow:none}
+  .view-cards tbody tr.watched td:first-child{box-shadow:none}
+  .view-cards tbody tr.watched{box-shadow:inset 3px 0 0 var(--star)}
+  .view-cards .slot-list{max-height:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd-in">
+    <div>
+      <h1>NFO 2026 Draft Board</h1>
+      <p class="sub">★ watch · ✓ draft to my team · ✕ gone (someone else took them)</p>
+    </div>
+    <div class="hd-stats">
+      <div class="stat" id="sSpent"><div class="v">$0</div><div class="k">Spent</div></div>
+      <div class="stat" id="sLeft"><div class="v">$200</div><div class="k">Left</div></div>
+      <div class="stat" id="sSlots"><div class="v">0/14</div><div class="k">Roster</div></div>
+      <div class="stat" id="sMax"><div class="v">$187</div><div class="k">Max bid</div></div>
+      <div class="stat" id="sAvail"><div class="v">0</div><div class="k">On board</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div>
+    <div class="filters">
+      <input type="search" id="q" placeholder="Search player or team…" autocomplete="off">
+      <div class="seg" id="posSeg">
+        <button data-pos="ALL" class="on">All</button>
+        <button data-pos="RB">RB</button><button data-pos="WR">WR</button>
+        <button data-pos="QB">QB</button><button data-pos="TE">TE</button>
+      </div>
+      <select id="round"><option value="ALL">All tiers</option></select>
+      <label class="toggle" id="tHideGone"><input type="checkbox">Hide gone</label>
+      <label class="toggle" id="tWatchOnly"><input type="checkbox">★ Watchlist</label>
+      <div class="seg" id="walkSeg" title="Walk-away threshold">
+        <button data-walk="p75">Walk 75th</button>
+        <button data-walk="p90">Walk 90th</button>
+      </div>
+      <div class="seg" id="metricSeg" title="Which price to show">
+        <button data-metric="mean">Mean</button>
+        <button data-metric="median">Median</button>
+        <button data-metric="p90">90th</button>
+      </div>
+      <div class="seg" id="viewSeg" title="Layout">
+        <button data-view="auto">Auto</button>
+        <button data-view="table">Table</button>
+        <button data-view="cards">Cards</button>
+      </div>
+    </div>
+    <p class="metric-note" id="metricNote"></p>
+    <div class="mkt" id="mkt">
+      <span class="mkt-lab">📊 Market</span>
+      <input type="number" id="mktIn" min="1" placeholder="sale $" inputmode="numeric">
+      <button id="mktUndo" title="remove last">↶</button>
+      <button id="mktReset" title="clear all">clear</button>
+      <span class="mkt-out" id="mktOut"></span>
+    </div>
+    <div class="tbl-card">
+      <div class="tbl-scroll">
+        <table id="tbl">
+          <thead><tr>
+            <th class="sortable" data-k="adp">ADP</th>
+            <th class="sortable" data-k="name">Player</th>
+            <th class="sortable" data-k="pos">Pos</th>
+            <th class="sortable" data-k="round">Rd</th>
+            <th class="sortable" data-k="price">Est $</th>
+            <th class="sortable" data-k="buy" title="25th percentile — at or under this is a genuine bargain">Buy ≤</th>
+            <th class="sortable" data-k="walk" id="walkTh" title="your walk-away threshold">Walk away</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="empty" style="display:none">No players match.</div>
+    </div>
+  </div>
+
+  <aside class="side">
+    <div class="card">
+      <h2>⛰ Tier watch</h2>
+      <div id="tierBody"></div>
+      <p class="maxbid" id="tierNote"></p>
+    </div>
+    <div class="card">
+      <h2>My Roster <span class="sub" id="rCount">0 / 14</span></h2>
+      <div class="meter" id="meter"><i style="width:0%"></i></div>
+      <div class="budget-row"><span>Spent <b id="rSpent">$0</b></span><span>Left <b id="rLeft">$200</b></span></div>
+      <div class="maxbid" id="rMax">Max bid on next player: <b>$187</b></div>
+      <div class="reqs" id="reqs"></div>
+      <div class="warn" id="warn"></div>
+      <div class="slot-list" id="picks"></div>
+      <button class="clear" id="clear">Clear roster</button>
+    </div>
+    <div class="card">
+      <h2>★ Watchlist <span class="sub" id="wCount">0</span></h2>
+      <div class="maxbid" id="wCost">Total if won at model price: <b>$0</b></div>
+      <div class="slot-list" id="watchList"></div>
+    </div>
+  </aside>
+</div>
+
+<div class="foot" style="margin-bottom:4px"><a href="nfo_2026_par_sheet.html" style="color:var(--accent)">🎯 Open the Par Sheet →</a></div>
+<div class="foot">
+  Prices are the NFO-market model (position × ADP round, recency-weighted + monotonic, 2023–25). Estimates, not guarantees —
+  wide ranges (esp. RB round 3, WR rounds 1–2) mean real swing.
+  <b>Buy ≤</b> is the 25th percentile — at or under it you're getting a bottom-quartile bargain (~1 draft in 4).
+  <b>Walk away</b> is your stop-bidding line — toggle between the 75th (disciplined; you win ~3 of 4) and the 90th (you win ~9 of 10 but pay a top-decile price).
+  <b>★</b> highlights a target, <b>✓</b> drafts to your team (counts against the $200), <b>✕</b> marks a player taken by
+  someone else. Roster rules: 8 starters (QB 1 · RB 2–4 · WR 2–4 · TE 1–3), 14-man roster, $200.
+</div>
+
+<script>
+const DATA = [{"adp":1,"round":1,"pos":"RB","posRank":"RB1","name":"Jahmyr Gibbs","team":"DET","price":58,"median":57,"p90":65,"p75":62,"buy":55,"lo":52,"hi":63,"tier":1},{"adp":2,"round":1,"pos":"RB","posRank":"RB2","name":"Bijan Robinson","team":"ATL","price":57,"median":57,"p90":65,"p75":60,"buy":55,"lo":51,"hi":63,"tier":1},{"adp":3,"round":1,"pos":"WR","posRank":"WR1","name":"Ja'Marr Chase","team":"CIN","price":47,"median":48,"p90":54,"p75":51,"buy":44,"lo":40,"hi":54,"tier":1},{"adp":4,"round":1,"pos":"RB","posRank":"RB3","name":"Christian McCaffrey","team":"SF","price":56,"median":56,"p90":65,"p75":59,"buy":53,"lo":49,"hi":62,"tier":1},{"adp":5,"round":1,"pos":"RB","posRank":"RB4","name":"Jonathan Taylor","team":"IND","price":54,"median":55,"p90":63,"p75":59,"buy":51,"lo":48,"hi":61,"tier":1},{"adp":6,"round":1,"pos":"WR","posRank":"WR2","name":"Puka Nacua","team":"LAR","price":46,"median":47,"p90":54,"p75":51,"buy":43,"lo":38,"hi":53,"tier":1},{"adp":7,"round":1,"pos":"RB","posRank":"RB5","name":"James Cook III","team":"BUF","price":53,"median":54,"p90":62,"p75":57,"buy":49,"lo":46,"hi":60,"tier":1},{"adp":8,"round":1,"pos":"WR","posRank":"WR3","name":"Jaxon Smith-Njigba","team":"SEA","price":44,"median":47,"p90":52,"p75":50,"buy":40,"lo":36,"hi":52,"tier":1},{"adp":9,"round":1,"pos":"RB","posRank":"RB6","name":"De'Von Achane","team":"MIA","price":51,"median":51,"p90":60,"p75":56,"buy":46,"lo":44,"hi":58,"tier":2},{"adp":10,"round":1,"pos":"RB","posRank":"RB7","name":"Ashton Jeanty","team":"LV","price":49,"median":49,"p90":59,"p75":54,"buy":45,"lo":42,"hi":57,"tier":2},{"adp":11,"round":1,"pos":"WR","posRank":"WR4","name":"Amon-Ra St. Brown","team":"DET","price":42,"median":44,"p90":51,"p75":48,"buy":33,"lo":34,"hi":50,"tier":1},{"adp":12,"round":1,"pos":"RB","posRank":"RB8","name":"Omarion Hampton","team":"LAC","price":47,"median":48,"p90":56,"p75":52,"buy":44,"lo":40,"hi":55,"tier":2},{"adp":13,"round":2,"pos":"WR","posRank":"WR5","name":"CeeDee Lamb","team":"DAL","price":40,"median":43,"p90":51,"p75":47,"buy":32,"lo":31,"hi":49,"tier":1},{"adp":14,"round":2,"pos":"RB","posRank":"RB9","name":"Derrick Henry","team":"BAL","price":46,"median":47,"p90":54,"p75":51,"buy":44,"lo":38,"hi":54,"tier":2},{"adp":15,"round":2,"pos":"RB","posRank":"RB10","name":"Saquon Barkley","team":"PHI","price":44,"median":46,"p90":53,"p75":49,"buy":42,"lo":36,"hi":53,"tier":2},{"adp":16,"round":2,"pos":"WR","posRank":"WR6","name":"Justin Jefferson","team":"MIN","price":37,"median":38,"p90":50,"p75":44,"buy":31,"lo":28,"hi":46,"tier":1},{"adp":17,"round":2,"pos":"RB","posRank":"RB11","name":"Chase Brown","team":"CIN","price":43,"median":46,"p90":52,"p75":48,"buy":41,"lo":34,"hi":52,"tier":2},{"adp":18,"round":2,"pos":"QB","posRank":"QB1","name":"Josh Allen","team":"BUF","price":14,"median":15,"p90":18,"p75":16,"buy":11,"lo":11,"hi":18,"tier":1},{"adp":19,"round":2,"pos":"RB","posRank":"RB12","name":"Kenneth Walker III","team":"KC","price":41,"median":45,"p90":52,"p75":48,"buy":33,"lo":31,"hi":51,"tier":2},{"adp":20,"round":2,"pos":"WR","posRank":"WR7","name":"Drake London","team":"ATL","price":35,"median":33,"p90":47,"p75":43,"buy":29,"lo":26,"hi":44,"tier":1},{"adp":21,"round":2,"pos":"TE","posRank":"TE1","name":"Trey McBride","team":"ARI","price":19,"median":16,"p90":31,"p75":26,"buy":13,"lo":10,"hi":27,"tier":1},{"adp":22,"round":2,"pos":"RB","posRank":"RB13","name":"Kyren Williams","team":"LAR","price":38,"median":42,"p90":51,"p75":48,"buy":27,"lo":27,"hi":50,"tier":3},{"adp":23,"round":2,"pos":"RB","posRank":"RB14","name":"Jeremiyah Love","team":"ARI","price":36,"median":40,"p90":49,"p75":47,"buy":26,"lo":24,"hi":48,"tier":3},{"adp":24,"round":2,"pos":"TE","posRank":"TE2","name":"Brock Bowers","team":"LV","price":17,"median":14,"p90":30,"p75":24,"buy":12,"lo":9,"hi":26,"tier":1},{"adp":25,"round":3,"pos":"RB","posRank":"RB15","name":"Josh Jacobs","team":"GB","price":33,"median":30,"p90":48,"p75":45,"buy":24,"lo":21,"hi":45,"tier":3},{"adp":26,"round":3,"pos":"WR","posRank":"WR8","name":"George Pickens","team":"DAL","price":31,"median":31,"p90":44,"p75":38,"buy":25,"lo":22,"hi":40,"tier":1},{"adp":27,"round":3,"pos":"WR","posRank":"WR9","name":"Nico Collins","team":"HOU","price":29,"median":29,"p90":43,"p75":34,"buy":24,"lo":20,"hi":38,"tier":1},{"adp":28,"round":3,"pos":"WR","posRank":"WR10","name":"A.J. Brown","team":"NE","price":27,"median":25,"p90":39,"p75":33,"buy":20,"lo":18,"hi":36,"tier":1},{"adp":29,"round":3,"pos":"WR","posRank":"WR11","name":"Chris Olave","team":"NO","price":25,"median":24,"p90":36,"p75":31,"buy":19,"lo":16,"hi":33,"tier":2},{"adp":30,"round":3,"pos":"RB","posRank":"RB16","name":"Javonte Williams","team":"DAL","price":29,"median":26,"p90":47,"p75":40,"buy":22,"lo":18,"hi":41,"tier":3},{"adp":31,"round":3,"pos":"RB","posRank":"RB17","name":"Breece Hall","team":"NYJ","price":27,"median":24,"p90":42,"p75":33,"buy":20,"lo":16,"hi":38,"tier":3},{"adp":32,"round":3,"pos":"WR","posRank":"WR12","name":"Malik Nabers","team":"NYG","price":23,"median":21,"p90":34,"p75":26,"buy":17,"lo":15,"hi":31,"tier":2},{"adp":33,"round":3,"pos":"QB","posRank":"QB2","name":"Lamar Jackson","team":"BAL","price":12,"median":11,"p90":17,"p75":16,"buy":8,"lo":8,"hi":16,"tier":1},{"adp":34,"round":3,"pos":"WR","posRank":"WR13","name":"Rashee Rice","team":"KC","price":21,"median":20,"p90":33,"p75":25,"buy":15,"lo":14,"hi":28,"tier":2},{"adp":35,"round":3,"pos":"RB","posRank":"RB18","name":"Bucky Irving","team":"TB","price":24,"median":22,"p90":38,"p75":29,"buy":18,"lo":14,"hi":34,"tier":4},{"adp":36,"round":3,"pos":"RB","posRank":"RB19","name":"Travis Etienne Jr.","team":"NO","price":22,"median":22,"p90":33,"p75":26,"buy":15,"lo":12,"hi":31,"tier":4},{"adp":37,"round":4,"pos":"RB","posRank":"RB20","name":"Cam Skattebo","team":"NYG","price":20,"median":21,"p90":31,"p75":24,"buy":14,"lo":11,"hi":29,"tier":4},{"adp":38,"round":4,"pos":"RB","posRank":"RB21","name":"Quinshon Judkins","team":"CLE","price":19,"median":19,"p90":27,"p75":22,"buy":12,"lo":11,"hi":27,"tier":4},{"adp":39,"round":4,"pos":"WR","posRank":"WR14","name":"Tetairoa McMillan","team":"CAR","price":19,"median":19,"p90":27,"p75":23,"buy":14,"lo":12,"hi":26,"tier":2},{"adp":40,"round":4,"pos":"WR","posRank":"WR15","name":"Garrett Wilson","team":"NYJ","price":18,"median":19,"p90":25,"p75":21,"buy":13,"lo":11,"hi":24,"tier":2},{"adp":41,"round":4,"pos":"WR","posRank":"WR16","name":"Tee Higgins","team":"CIN","price":17,"median":17,"p90":24,"p75":21,"buy":12,"lo":10,"hi":23,"tier":2},{"adp":42,"round":4,"pos":"WR","posRank":"WR17","name":"Zay Flowers","team":"BAL","price":16,"median":16,"p90":24,"p75":20,"buy":11,"lo":9,"hi":22,"tier":2},{"adp":43,"round":4,"pos":"WR","posRank":"WR18","name":"Luther Burden III","team":"CHI","price":15,"median":14,"p90":24,"p75":20,"buy":9,"lo":8,"hi":21,"tier":3},{"adp":44,"round":4,"pos":"RB","posRank":"RB22","name":"TreVeyon Henderson","team":"NE","price":17,"median":17,"p90":24,"p75":22,"buy":12,"lo":10,"hi":24,"tier":4},{"adp":45,"round":4,"pos":"WR","posRank":"WR19","name":"Emeka Egbuka","team":"TB","price":14,"median":12,"p90":24,"p75":19,"buy":9,"lo":7,"hi":21,"tier":2},{"adp":46,"round":4,"pos":"WR","posRank":"WR20","name":"DeVonta Smith","team":"PHI","price":14,"median":11,"p90":24,"p75":19,"buy":8,"lo":7,"hi":20,"tier":2},{"adp":47,"round":4,"pos":"RB","posRank":"RB23","name":"Bhayshul Tuten","team":"JAC","price":16,"median":16,"p90":23,"p75":20,"buy":11,"lo":10,"hi":22,"tier":4},{"adp":48,"round":4,"pos":"WR","posRank":"WR21","name":"Ladd McConkey","team":"LAC","price":13,"median":11,"p90":24,"p75":19,"buy":8,"lo":6,"hi":20,"tier":2},{"adp":49,"round":5,"pos":"TE","posRank":"TE3","name":"Colston Loveland","team":"CHI","price":9,"median":7,"p90":14,"p75":12,"buy":5,"lo":4,"hi":15,"tier":1},{"adp":50,"round":5,"pos":"WR","posRank":"WR22","name":"Jaylen Waddle","team":"DEN","price":13,"median":11,"p90":24,"p75":19,"buy":7,"lo":6,"hi":19,"tier":2},{"adp":51,"round":5,"pos":"RB","posRank":"RB24","name":"David Montgomery","team":"HOU","price":15,"median":15,"p90":22,"p75":19,"buy":10,"lo":9,"hi":21,"tier":4},{"adp":52,"round":5,"pos":"WR","posRank":"WR23","name":"DJ Moore","team":"BUF","price":12,"median":11,"p90":24,"p75":19,"buy":7,"lo":6,"hi":19,"tier":3},{"adp":53,"round":5,"pos":"RB","posRank":"RB25","name":"D'Andre Swift","team":"CHI","price":14,"median":14,"p90":21,"p75":19,"buy":10,"lo":9,"hi":20,"tier":4},{"adp":54,"round":5,"pos":"QB","posRank":"QB3","name":"Drake Maye","team":"NE","price":8,"median":8,"p90":13,"p75":11,"buy":5,"lo":4,"hi":12,"tier":1},{"adp":55,"round":5,"pos":"WR","posRank":"WR24","name":"Davante Adams","team":"LAR","price":12,"median":10,"p90":21,"p75":17,"buy":7,"lo":6,"hi":18,"tier":3},{"adp":56,"round":5,"pos":"QB","posRank":"QB4","name":"Joe Burrow","team":"CIN","price":7,"median":6,"p90":12,"p75":10,"buy":4,"lo":3,"hi":11,"tier":1},{"adp":57,"round":5,"pos":"WR","posRank":"WR25","name":"Jameson Williams","team":"DET","price":12,"median":10,"p90":21,"p75":14,"buy":7,"lo":6,"hi":18,"tier":3},{"adp":58,"round":5,"pos":"TE","posRank":"TE4","name":"Tyler Warren","team":"IND","price":7,"median":6,"p90":13,"p75":8,"buy":4,"lo":3,"hi":11,"tier":1},{"adp":59,"round":5,"pos":"WR","posRank":"WR26","name":"Terry McLaurin","team":"WAS","price":12,"median":10,"p90":21,"p75":14,"buy":7,"lo":6,"hi":17,"tier":3},{"adp":60,"round":5,"pos":"RB","posRank":"RB26","name":"Jaylen Warren","team":"PIT","price":14,"median":12,"p90":19,"p75":18,"buy":9,"lo":8,"hi":19,"tier":5},{"adp":61,"round":6,"pos":"WR","posRank":"WR27","name":"Mike Evans","team":"SF","price":11,"median":10,"p90":21,"p75":14,"buy":7,"lo":5,"hi":17,"tier":3},{"adp":62,"round":6,"pos":"RB","posRank":"RB27","name":"RJ Harvey","team":"DEN","price":13,"median":12,"p90":19,"p75":18,"buy":8,"lo":7,"hi":18,"tier":7},{"adp":63,"round":6,"pos":"QB","posRank":"QB5","name":"Jayden Daniels","team":"WAS","price":6,"median":5,"p90":11,"p75":8,"buy":3,"lo":2,"hi":9,"tier":1},{"adp":64,"round":6,"pos":"TE","posRank":"TE5","name":"Harold Fannin Jr.","team":"CLE","price":6,"median":5,"p90":10,"p75":7,"buy":3,"lo":2,"hi":9,"tier":2},{"adp":65,"round":6,"pos":"RB","posRank":"RB28","name":"Rhamondre Stevenson","team":"NE","price":12,"median":11,"p90":19,"p75":18,"buy":8,"lo":6,"hi":18,"tier":5},{"adp":66,"round":6,"pos":"WR","posRank":"WR28","name":"Rome Odunze","team":"CHI","price":10,"median":10,"p90":20,"p75":13,"buy":7,"lo":5,"hi":16,"tier":3},{"adp":67,"round":6,"pos":"WR","posRank":"WR29","name":"Christian Watson","team":"GB","price":10,"median":9,"p90":20,"p75":13,"buy":6,"lo":4,"hi":15,"tier":3},{"adp":68,"round":6,"pos":"RB","posRank":"RB29","name":"Rico Dowdle","team":"PIT","price":11,"median":10,"p90":19,"p75":17,"buy":7,"lo":5,"hi":16,"tier":6},{"adp":69,"round":6,"pos":"RB","posRank":"RB30","name":"Jadarian Price","team":"SEA","price":10,"median":10,"p90":18,"p75":12,"buy":5,"lo":4,"hi":15,"tier":5},{"adp":70,"round":6,"pos":"QB","posRank":"QB6","name":"Jalen Hurts","team":"PHI","price":5,"median":4,"p90":10,"p75":6,"buy":2,"lo":1,"hi":8,"tier":1},{"adp":71,"round":6,"pos":"WR","posRank":"WR30","name":"Carnell Tate","team":"TEN","price":9,"median":8,"p90":19,"p75":12,"buy":4,"lo":3,"hi":14,"tier":4},{"adp":72,"round":6,"pos":"RB","posRank":"RB31","name":"Tony Pollard","team":"TEN","price":9,"median":8,"p90":18,"p75":11,"buy":5,"lo":3,"hi":14,"tier":5},{"adp":73,"round":7,"pos":"TE","posRank":"TE6","name":"Tucker Kraft","team":"GB","price":4,"median":4,"p90":7,"p75":5,"buy":3,"lo":2,"hi":7,"tier":2},{"adp":74,"round":7,"pos":"WR","posRank":"WR31","name":"Parker Washington","team":"JAC","price":8,"median":7,"p90":18,"p75":10,"buy":3,"lo":2,"hi":13,"tier":4},{"adp":75,"round":7,"pos":"RB","posRank":"RB32","name":"Kyle Monangai","team":"CHI","price":8,"median":6,"p90":15,"p75":10,"buy":5,"lo":3,"hi":12,"tier":7},{"adp":76,"round":7,"pos":"WR","posRank":"WR32","name":"Michael Wilson","team":"ARI","price":7,"median":7,"p90":13,"p75":10,"buy":3,"lo":2,"hi":12,"tier":5},{"adp":77,"round":7,"pos":"WR","posRank":"WR33","name":"Brian Thomas Jr.","team":"JAC","price":6,"median":5,"p90":13,"p75":10,"buy":2,"lo":1,"hi":12,"tier":4},{"adp":78,"round":7,"pos":"RB","posRank":"RB33","name":"Chuba Hubbard","team":"CAR","price":7,"median":6,"p90":11,"p75":10,"buy":5,"lo":3,"hi":11,"tier":6},{"adp":79,"round":7,"pos":"WR","posRank":"WR34","name":"Courtland Sutton","team":"DEN","price":6,"median":4,"p90":13,"p75":8,"buy":2,"lo":1,"hi":11,"tier":5},{"adp":80,"round":7,"pos":"WR","posRank":"WR35","name":"Jordyn Tyson","team":"NO","price":5,"median":3,"p90":13,"p75":7,"buy":2,"lo":1,"hi":10,"tier":5},{"adp":81,"round":7,"pos":"RB","posRank":"RB34","name":"J.K. Dobbins","team":"DEN","price":6,"median":5,"p90":11,"p75":9,"buy":4,"lo":3,"hi":10,"tier":6},{"adp":82,"round":7,"pos":"TE","posRank":"TE7","name":"Kyle Pitts Sr.","team":"ATL","price":3,"median":3,"p90":6,"p75":5,"buy":1,"lo":1,"hi":6,"tier":2},{"adp":83,"round":7,"pos":"RB","posRank":"RB35","name":"Blake Corum","team":"LAR","price":6,"median":5,"p90":10,"p75":8,"buy":4,"lo":3,"hi":9,"tier":7},{"adp":84,"round":7,"pos":"WR","posRank":"WR36","name":"Marvin Harrison Jr.","team":"ARI","price":4,"median":3,"p90":10,"p75":5,"buy":2,"lo":1,"hi":9,"tier":4},{"adp":85,"round":8,"pos":"WR","posRank":"WR37","name":"DK Metcalf","team":"PIT","price":4,"median":3,"p90":8,"p75":5,"buy":2,"lo":1,"hi":8,"tier":4},{"adp":86,"round":8,"pos":"QB","posRank":"QB7","name":"Caleb Williams","team":"CHI","price":4,"median":2,"p90":10,"p75":5,"buy":1,"lo":1,"hi":7,"tier":2},{"adp":87,"round":8,"pos":"TE","posRank":"TE8","name":"Sam LaPorta","team":"DET","price":3,"median":2,"p90":6,"p75":5,"buy":1,"lo":1,"hi":5,"tier":2},{"adp":88,"round":8,"pos":"QB","posRank":"QB8","name":"Justin Herbert","team":"LAC","price":3,"median":2,"p90":8,"p75":4,"buy":1,"lo":1,"hi":6,"tier":2},{"adp":89,"round":8,"pos":"QB","posRank":"QB9","name":"Trevor Lawrence","team":"JAC","price":3,"median":1,"p90":8,"p75":3,"buy":1,"lo":1,"hi":6,"tier":2},{"adp":90,"round":8,"pos":"WR","posRank":"WR38","name":"Chris Godwin Jr.","team":"TB","price":4,"median":2,"p90":7,"p75":5,"buy":2,"lo":1,"hi":7,"tier":5},{"adp":91,"round":8,"pos":"QB","posRank":"QB10","name":"Dak Prescott","team":"DAL","price":2,"median":1,"p90":8,"p75":2,"buy":1,"lo":1,"hi":5,"tier":2},{"adp":92,"round":8,"pos":"QB","posRank":"QB11","name":"Jaxson Dart","team":"NYG","price":2,"median":1,"p90":4,"p75":2,"buy":1,"lo":1,"hi":5,"tier":3},{"adp":93,"round":8,"pos":"WR","posRank":"WR39","name":"Wan'Dale Robinson","team":"TEN","price":3,"median":2,"p90":5,"p75":5,"buy":2,"lo":1,"hi":6,"tier":6},{"adp":94,"round":8,"pos":"RB","posRank":"RB36","name":"Kenny Gainwell","team":"TB","price":6,"median":5,"p90":10,"p75":8,"buy":3,"lo":2,"hi":9,"tier":7},{"adp":95,"round":8,"pos":"WR","posRank":"WR40","name":"Jakobi Meyers","team":"JAC","price":3,"median":2,"p90":5,"p75":3,"buy":1,"lo":1,"hi":5,"tier":6},{"adp":96,"round":8,"pos":"RB","posRank":"RB37","name":"Jordan Mason","team":"MIN","price":6,"median":5,"p90":11,"p75":8,"buy":3,"lo":2,"hi":9,"tier":7},{"adp":97,"round":9,"pos":"RB","posRank":"RB38","name":"Jacory Croskey-Merritt","team":"WAS","price":6,"median":5,"p90":11,"p75":8,"buy":2,"lo":2,"hi":9,"tier":7},{"adp":98,"round":9,"pos":"WR","posRank":"WR41","name":"Alec Pierce","team":"IND","price":3,"median":2,"p90":5,"p75":3,"buy":1,"lo":1,"hi":5,"tier":5},{"adp":99,"round":9,"pos":"RB","posRank":"RB39","name":"Aaron Jones Sr.","team":"MIN","price":5,"median":5,"p90":11,"p75":8,"buy":2,"lo":1,"hi":9,"tier":0},{"adp":100,"round":9,"pos":"TE","posRank":"TE9","name":"Dalton Kincaid","team":"BUF","price":2,"median":2,"p90":5,"p75":5,"buy":1,"lo":1,"hi":4,"tier":3},{"adp":101,"round":9,"pos":"WR","posRank":"WR42","name":"Jordan Addison","team":"MIN","price":3,"median":2,"p90":7,"p75":3,"buy":1,"lo":1,"hi":6,"tier":6},{"adp":102,"round":9,"pos":"TE","posRank":"TE10","name":"Travis Kelce","team":"KC","price":2,"median":2,"p90":5,"p75":5,"buy":1,"lo":1,"hi":4,"tier":3},{"adp":103,"round":9,"pos":"TE","posRank":"TE11","name":"George Kittle","team":"SF","price":2,"median":2,"p90":5,"p75":5,"buy":1,"lo":1,"hi":4,"tier":3},{"adp":104,"round":9,"pos":"TE","posRank":"TE12","name":"Isaiah Likely","team":"NYG","price":2,"median":2,"p90":5,"p75":5,"buy":1,"lo":1,"hi":4,"tier":3},{"adp":105,"round":9,"pos":"QB","posRank":"QB12","name":"Patrick Mahomes II","team":"KC","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":3,"tier":3},{"adp":106,"round":9,"pos":"WR","posRank":"WR43","name":"Michael Pittman Jr.","team":"PIT","price":3,"median":2,"p90":10,"p75":3,"buy":1,"lo":1,"hi":7,"tier":5},{"adp":107,"round":9,"pos":"TE","posRank":"TE13","name":"Jake Ferguson","team":"DAL","price":2,"median":2,"p90":5,"p75":4,"buy":1,"lo":1,"hi":4,"tier":3},{"adp":108,"round":9,"pos":"TE","posRank":"TE14","name":"Mark Andrews","team":"BAL","price":2,"median":2,"p90":5,"p75":4,"buy":1,"lo":1,"hi":4,"tier":3},{"adp":109,"round":10,"pos":"RB","posRank":"RB40","name":"Tyler Allgeier","team":"ARI","price":5,"median":3,"p90":10,"p75":6,"buy":2,"lo":1,"hi":8,"tier":0},{"adp":110,"round":10,"pos":"WR","posRank":"WR44","name":"Josh Downs","team":"IND","price":4,"median":2,"p90":10,"p75":3,"buy":1,"lo":1,"hi":8,"tier":5},{"adp":111,"round":10,"pos":"WR","posRank":"WR45","name":"Quentin Johnston","team":"LAC","price":4,"median":2,"p90":15,"p75":3,"buy":1,"lo":1,"hi":9,"tier":5},{"adp":112,"round":10,"pos":"QB","posRank":"QB13","name":"Brock Purdy","team":"SF","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":2,"tier":3},{"adp":113,"round":10,"pos":"RB","posRank":"RB41","name":"Woody Marks","team":"HOU","price":4,"median":3,"p90":9,"p75":6,"buy":2,"lo":1,"hi":8,"tier":0},{"adp":114,"round":10,"pos":"RB","posRank":"RB42","name":"Zach Charbonnet","team":"SEA","price":4,"median":3,"p90":9,"p75":5,"buy":2,"lo":1,"hi":8,"tier":0},{"adp":115,"round":10,"pos":"RB","posRank":"RB43","name":"Brian Robinson Jr.","team":"ATL","price":4,"median":2,"p90":8,"p75":5,"buy":2,"lo":1,"hi":7,"tier":0},{"adp":116,"round":10,"pos":"TE","posRank":"TE15","name":"Dallas Goedert","team":"PHI","price":3,"median":2,"p90":5,"p75":4,"buy":1,"lo":1,"hi":4,"tier":3},{"adp":117,"round":10,"pos":"QB","posRank":"QB14","name":"Bo Nix","team":"DEN","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":2,"tier":3},{"adp":118,"round":10,"pos":"RB","posRank":"RB44","name":"Rachaad White","team":"WAS","price":4,"median":2,"p90":8,"p75":4,"buy":2,"lo":1,"hi":7,"tier":7},{"adp":119,"round":10,"pos":"QB","posRank":"QB15","name":"Matthew Stafford","team":"LAR","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":3},{"adp":120,"round":10,"pos":"TE","posRank":"TE16","name":"Juwan Johnson","team":"NO","price":3,"median":2,"p90":5,"p75":4,"buy":1,"lo":1,"hi":4,"tier":4},{"adp":121,"round":11,"pos":"RB","posRank":"RB45","name":"Tyrone Tracy Jr.","team":"NYG","price":3,"median":2,"p90":8,"p75":4,"buy":1,"lo":1,"hi":6,"tier":0},{"adp":122,"round":11,"pos":"WR","posRank":"WR46","name":"Stefon Diggs","team":"WAS","price":4,"median":2,"p90":15,"p75":3,"buy":1,"lo":1,"hi":10,"tier":6},{"adp":123,"round":11,"pos":"WR","posRank":"WR47","name":"Jayden Reed","team":"GB","price":4,"median":2,"p90":15,"p75":3,"buy":1,"lo":1,"hi":10,"tier":6},{"adp":124,"round":11,"pos":"RB","posRank":"RB46","name":"Jonathon Brooks","team":"CAR","price":3,"median":2,"p90":8,"p75":4,"buy":1,"lo":1,"hi":6,"tier":6},{"adp":125,"round":11,"pos":"TE","posRank":"TE17","name":"Hunter Henry","team":"NE","price":3,"median":4,"p90":5,"p75":5,"buy":1,"lo":1,"hi":5,"tier":4},{"adp":126,"round":11,"pos":"QB","posRank":"QB16","name":"Jared Goff","team":"DET","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":3},{"adp":127,"round":11,"pos":"WR","posRank":"WR48","name":"Romeo Doubs","team":"NE","price":4,"median":1,"p90":15,"p75":2,"buy":1,"lo":1,"hi":10,"tier":7},{"adp":128,"round":11,"pos":"RB","posRank":"RB47","name":"Alvin Kamara","team":"NO","price":3,"median":2,"p90":7,"p75":4,"buy":1,"lo":1,"hi":5,"tier":0},{"adp":130,"round":11,"pos":"RB","posRank":"RB48","name":"Tyjae Spears","team":"TEN","price":3,"median":2,"p90":5,"p75":3,"buy":1,"lo":1,"hi":5,"tier":0},{"adp":131,"round":11,"pos":"WR","posRank":"WR49","name":"Xavier Worthy","team":"KC","price":4,"median":1,"p90":15,"p75":2,"buy":1,"lo":1,"hi":9,"tier":7},{"adp":132,"round":11,"pos":"TE","posRank":"TE18","name":"Brenton Strange","team":"JAC","price":3,"median":4,"p90":5,"p75":5,"buy":1,"lo":1,"hi":5,"tier":4},{"adp":133,"round":12,"pos":"RB","posRank":"RB49","name":"Jonah Coleman","team":"DEN","price":2,"median":2,"p90":4,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":134,"round":12,"pos":"TE","posRank":"TE19","name":"Oronde Gadsden II","team":"LAC","price":3,"median":4,"p90":5,"p75":5,"buy":1,"lo":1,"hi":5,"tier":5},{"adp":135,"round":12,"pos":"WR","posRank":"WR50","name":"Khalil Shakir","team":"BUF","price":3,"median":1,"p90":5,"p75":2,"buy":1,"lo":1,"hi":8,"tier":7},{"adp":137,"round":12,"pos":"WR","posRank":"WR51","name":"KC Concepcion","team":"CLE","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":7,"tier":7},{"adp":138,"round":12,"pos":"QB","posRank":"QB17","name":"Jordan Love","team":"GB","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":4},{"adp":140,"round":12,"pos":"WR","posRank":"WR52","name":"Jayden Higgins","team":"HOU","price":2,"median":1,"p90":3,"p75":1,"buy":1,"lo":1,"hi":6,"tier":7},{"adp":141,"round":12,"pos":"QB","posRank":"QB18","name":"Baker Mayfield","team":"TB","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":4},{"adp":142,"round":12,"pos":"WR","posRank":"WR53","name":"Deebo Samuel Sr.","team":"SF","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":5,"tier":7},{"adp":143,"round":12,"pos":"TE","posRank":"TE20","name":"Kenyon Sadiq","team":"NYJ","price":2,"median":1,"p90":5,"p75":5,"buy":1,"lo":1,"hi":4,"tier":5},{"adp":144,"round":12,"pos":"WR","posRank":"WR54","name":"Jalen Coker","team":"CAR","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":7},{"adp":145,"round":13,"pos":"TE","posRank":"TE21","name":"Dalton Schultz","team":"HOU","price":2,"median":1,"p90":5,"p75":2,"buy":1,"lo":1,"hi":4,"tier":5},{"adp":146,"round":13,"pos":"RB","posRank":"RB50","name":"Chris Rodriguez Jr.","team":"JAC","price":2,"median":2,"p90":4,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":147,"round":13,"pos":"QB","posRank":"QB19","name":"Tyler Shough","team":"NO","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":4},{"adp":148,"round":13,"pos":"TE","posRank":"TE22","name":"T.J. Hockenson","team":"MIN","price":2,"median":1,"p90":5,"p75":1,"buy":1,"lo":1,"hi":3,"tier":5},{"adp":150,"round":13,"pos":"TE","posRank":"TE23","name":"Chig Okonkwo","team":"WAS","price":2,"median":1,"p90":5,"p75":2,"buy":1,"lo":1,"hi":4,"tier":4},{"adp":151,"round":13,"pos":"RB","posRank":"RB51","name":"Dylan Sampson","team":"CLE","price":2,"median":1,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":152,"round":13,"pos":"QB","posRank":"QB20","name":"Malik Willis","team":"MIA","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":4},{"adp":153,"round":13,"pos":"QB","posRank":"QB21","name":"Kyler Murray","team":"MIN","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":4},{"adp":154,"round":13,"pos":"WR","posRank":"WR55","name":"Jauan Jennings","team":"MIN","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":155,"round":13,"pos":"RB","posRank":"RB52","name":"Keaton Mitchell","team":"LAC","price":2,"median":1,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":157,"round":14,"pos":"TE","posRank":"TE24","name":"David Njoku","team":"LAC","price":2,"median":1,"p90":5,"p75":1,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":158,"round":14,"pos":"RB","posRank":"RB53","name":"Isiah Pacheco","team":"DET","price":2,"median":1,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":159,"round":14,"pos":"RB","posRank":"RB54","name":"Tank Bigsby","team":"PHI","price":2,"median":1,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":160,"round":14,"pos":"RB","posRank":"RB55","name":"James Conner","team":"ARI","price":2,"median":1,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":161,"round":14,"pos":"WR","posRank":"WR56","name":"Rashid Shaheed","team":"SEA","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":3,"tier":8},{"adp":164,"round":14,"pos":"RB","posRank":"RB56","name":"Mike Washington Jr.","team":"LV","price":2,"median":1,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":165,"round":14,"pos":"WR","posRank":"WR57","name":"Matthew Golden","team":"GB","price":2,"median":1,"p90":4,"p75":2,"buy":1,"lo":1,"hi":3,"tier":7},{"adp":166,"round":14,"pos":"RB","posRank":"RB57","name":"Braelon Allen","team":"NYJ","price":2,"median":1,"p90":6,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":167,"round":14,"pos":"RB","posRank":"RB58","name":"Emmett Johnson","team":"KC","price":2,"median":1,"p90":6,"p75":1,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":169,"round":15,"pos":"WR","posRank":"WR58","name":"Denzel Boston","team":"CLE","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":3,"tier":8},{"adp":170,"round":15,"pos":"QB","posRank":"QB22","name":"Sam Darnold","team":"SEA","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":5},{"adp":171,"round":15,"pos":"QB","posRank":"QB23","name":"C.J. Stroud","team":"HOU","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":5},{"adp":172,"round":15,"pos":"WR","posRank":"WR59","name":"Jerry Jeudy","team":"CLE","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":3,"tier":8},{"adp":173,"round":15,"pos":"WR","posRank":"WR60","name":"Omar Cooper Jr.","team":"NYJ","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":176,"round":15,"pos":"WR","posRank":"WR61","name":"Kayshon Boutte","team":"NE","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":178,"round":15,"pos":"TE","posRank":"TE25","name":"AJ Barner","team":"SEA","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":5},{"adp":179,"round":15,"pos":"WR","posRank":"WR62","name":"Calvin Ridley","team":"TEN","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":181,"round":16,"pos":"RB","posRank":"RB59","name":"Sean Tucker","team":"TB","price":2,"median":1,"p90":6,"p75":1,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":182,"round":16,"pos":"RB","posRank":"RB60","name":"Kimani Vidal","team":"LAC","price":2,"median":1,"p90":3,"p75":1,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":184,"round":16,"pos":"WR","posRank":"WR63","name":"Ja'Kobi Lane","team":"BAL","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":185,"round":16,"pos":"WR","posRank":"WR64","name":"Jalen McMillan","team":"TB","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":186,"round":16,"pos":"TE","posRank":"TE26","name":"Cade Otton","team":"TB","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":188,"round":16,"pos":"TE","posRank":"TE27","name":"Terrance Ferguson","team":"LAR","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":5},{"adp":189,"round":16,"pos":"WR","posRank":"WR65","name":"Jalen Nailor","team":"LV","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":190,"round":16,"pos":"QB","posRank":"QB24","name":"Cam Ward","team":"TEN","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":5},{"adp":191,"round":16,"pos":"TE","posRank":"TE28","name":"Gunnar Helm","team":"TEN","price":2,"median":1,"p90":5,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":193,"round":17,"pos":"RB","posRank":"RB61","name":"Nicholas Singleton","team":"TEN","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":194,"round":17,"pos":"WR","posRank":"WR66","name":"Travis Hunter","team":"JAC","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":195,"round":17,"pos":"WR","posRank":"WR67","name":"Adonai Mitchell","team":"NYJ","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":196,"round":17,"pos":"WR","posRank":"WR68","name":"De'Zhaun Stribling","team":"SF","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":8},{"adp":197,"round":17,"pos":"WR","posRank":"WR69","name":"Tyreek Hill ","team":"","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":198,"round":17,"pos":"QB","posRank":"QB25","name":"Daniel Jones","team":"IND","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":5},{"adp":199,"round":17,"pos":"RB","posRank":"RB62","name":"Ray Davis","team":"BUF","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":200,"round":17,"pos":"WR","posRank":"WR70","name":"Makai Lemon","team":"PHI","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":6},{"adp":201,"round":17,"pos":"TE","posRank":"TE29","name":"Colby Parkinson","team":"LAR","price":2,"median":1,"p90":4,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":203,"round":17,"pos":"WR","posRank":"WR71","name":"Tank Dell","team":"HOU","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":204,"round":17,"pos":"WR","posRank":"WR72","name":"Tre' Harris","team":"LAC","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":205,"round":18,"pos":"RB","posRank":"RB63","name":"Kaytron Allen","team":"WAS","price":2,"median":2,"p90":3,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":206,"round":18,"pos":"QB","posRank":"QB26","name":"Bryce Young","team":"CAR","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":1,"tier":5},{"adp":207,"round":18,"pos":"RB","posRank":"RB64","name":"Jaydon Blue","team":"DAL","price":2,"median":2,"p90":6,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":209,"round":18,"pos":"QB","posRank":"QB27","name":"Fernando Mendoza","team":"LV","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":210,"round":18,"pos":"RB","posRank":"RB65","name":"Trey Benson","team":"ARI","price":2,"median":2,"p90":6,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":212,"round":18,"pos":"TE","posRank":"TE30","name":"Eli Stowers","team":"PHI","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":214,"round":18,"pos":"QB","posRank":"QB28","name":"Jacoby Brissett","team":"ARI","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":215,"round":18,"pos":"WR","posRank":"WR73","name":"Tre Tucker","team":"LV","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":216,"round":18,"pos":"WR","posRank":"WR74","name":"Zachariah Branch","team":"ATL","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":217,"round":19,"pos":"RB","posRank":"RB66","name":"Demond Claiborne","team":"MIN","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":220,"round":19,"pos":"TE","posRank":"TE31","name":"Mason Taylor","team":"NYJ","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":221,"round":19,"pos":"WR","posRank":"WR75","name":"Antonio Williams","team":"WAS","price":1,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":222,"round":19,"pos":"RB","posRank":"RB67","name":"MarShawn Lloyd","team":"GB","price":3,"median":2,"p90":6,"p75":3,"buy":2,"lo":1,"hi":4,"tier":0},{"adp":223,"round":19,"pos":"RB","posRank":"RB68","name":"Jaylen Wright","team":"MIA","price":3,"median":2,"p90":6,"p75":3,"buy":2,"lo":1,"hi":5,"tier":0},{"adp":227,"round":19,"pos":"WR","posRank":"WR76","name":"Malachi Fields","team":"NYG","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":228,"round":19,"pos":"TE","posRank":"TE32","name":"Theo Johnson","team":"NYG","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":230,"round":20,"pos":"TE","posRank":"TE33","name":"Jake Tonges","team":"SF","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":231,"round":20,"pos":"QB","posRank":"QB29","name":"Aaron Rodgers","team":"PIT","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":232,"round":20,"pos":"WR","posRank":"WR77","name":"Isaac TeSlaa","team":"DET","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":233,"round":20,"pos":"RB","posRank":"RB69","name":"Emanuel Wilson","team":"SEA","price":3,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":234,"round":20,"pos":"WR","posRank":"WR78","name":"Pat Bryant","team":"DEN","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":235,"round":20,"pos":"RB","posRank":"RB70","name":"Justice Hill","team":"BAL","price":3,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":236,"round":20,"pos":"WR","posRank":"WR79","name":"Malik Washington","team":"MIA","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":238,"round":20,"pos":"QB","posRank":"QB30","name":"Tua Tagovailoa","team":"ATL","price":2,"median":1,"p90":4,"p75":2,"buy":1,"lo":1,"hi":5,"tier":0},{"adp":239,"round":20,"pos":"WR","posRank":"WR80","name":"Brandon Aiyuk","team":"SF","price":1,"median":1,"p90":2,"p75":1,"buy":1,"lo":1,"hi":2,"tier":0},{"adp":240,"round":20,"pos":"QB","posRank":"QB31","name":"Geno Smith","team":"NYJ","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":242,"round":21,"pos":"TE","posRank":"TE34","name":"Greg Dulcich","team":"MIA","price":2,"median":1,"p90":5,"p75":3,"buy":1,"lo":1,"hi":5,"tier":0},{"adp":243,"round":21,"pos":"WR","posRank":"WR81","name":"Dontayvion Wicks","team":"PHI","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":5,"tier":0},{"adp":245,"round":21,"pos":"QB","posRank":"QB32","name":"Michael Penix Jr.","team":"ATL","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":246,"round":21,"pos":"RB","posRank":"RB71","name":"Joe Mixon ","team":"","price":3,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":248,"round":21,"pos":"QB","posRank":"QB33","name":"Shedeur Sanders","team":"CLE","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":249,"round":21,"pos":"RB","posRank":"RB72","name":"Kaleb Johnson","team":"PIT","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":251,"round":21,"pos":"WR","posRank":"WR82","name":"Germie Bernard","team":"PIT","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":5,"tier":0},{"adp":252,"round":21,"pos":"RB","posRank":"RB73","name":"Devin Neal","team":"NO","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":254,"round":22,"pos":"WR","posRank":"WR83","name":"Ryan Flournoy","team":"DAL","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":5,"tier":0},{"adp":255,"round":22,"pos":"RB","posRank":"RB74","name":"Najee Harris","team":"NYG","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":256,"round":22,"pos":"RB","posRank":"RB75","name":"Kaelon Black","team":"SF","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":257,"round":22,"pos":"WR","posRank":"WR84","name":"Troy Franklin","team":"DEN","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":258,"round":22,"pos":"QB","posRank":"QB34","name":"Kirk Cousins","team":"LV","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":259,"round":22,"pos":"RB","posRank":"RB76","name":"George Holani","team":"SEA","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":260,"round":22,"pos":"WR","posRank":"WR85","name":"Chimere Dike","team":"TEN","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":261,"round":22,"pos":"QB","posRank":"QB35","name":"J.J. McCarthy","team":"MIN","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":262,"round":22,"pos":"RB","posRank":"RB77","name":"Ty Johnson","team":"BUF","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":263,"round":22,"pos":"TE","posRank":"TE35","name":"Pat Freiermuth","team":"PIT","price":2,"median":1,"p90":5,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":265,"round":23,"pos":"RB","posRank":"RB78","name":"Kendre Miller","team":"NO","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":267,"round":23,"pos":"WR","posRank":"WR86","name":"Cooper Kupp","team":"SEA","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":268,"round":23,"pos":"RB","posRank":"RB79","name":"Brashard Smith","team":"KC","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":269,"round":23,"pos":"WR","posRank":"WR87","name":"Cyrus Allen","team":"KC","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":270,"round":23,"pos":"WR","posRank":"WR88","name":"Darnell Mooney","team":"NYG","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":271,"round":23,"pos":"WR","posRank":"WR89","name":"Christian Kirk","team":"SF","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":272,"round":23,"pos":"QB","posRank":"QB36","name":"Deshaun Watson","team":"CLE","price":2,"median":1,"p90":3,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":273,"round":23,"pos":"RB","posRank":"RB80","name":"Austin Ekeler ","team":"","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":274,"round":23,"pos":"WR","posRank":"WR90","name":"Elic Ayomanor","team":"TEN","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":275,"round":23,"pos":"WR","posRank":"WR91","name":"Caleb Douglas","team":"MIA","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":276,"round":23,"pos":"RB","posRank":"RB81","name":"Jordan James","team":"SF","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":277,"round":24,"pos":"WR","posRank":"WR92","name":"Keenan Allen","team":"IND","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":278,"round":24,"pos":"RB","posRank":"RB82","name":"Audric Estime","team":"NO","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":279,"round":24,"pos":"WR","posRank":"WR93","name":"Jaylin Noel","team":"HOU","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":280,"round":24,"pos":"QB","posRank":"QB37","name":"Carson Beck","team":"ARI","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":281,"round":24,"pos":"RB","posRank":"RB83","name":"Devin Singletary","team":"NYG","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":282,"round":24,"pos":"RB","posRank":"RB84","name":"Jarquez Hunter","team":"LAR","price":2,"median":2,"p90":6,"p75":3,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":284,"round":24,"pos":"WR","posRank":"WR94","name":"Marvin Mims Jr.","team":"DEN","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":287,"round":24,"pos":"WR","posRank":"WR95","name":"Jalen Tolbert","team":"MIA","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":288,"round":24,"pos":"TE","posRank":"TE36","name":"Evan Engram","team":"DEN","price":2,"median":1,"p90":5,"p75":2,"buy":1,"lo":1,"hi":4,"tier":0},{"adp":289,"round":25,"pos":"WR","posRank":"WR96","name":"Kyle Williams","team":"NE","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0},{"adp":290,"round":25,"pos":"WR","posRank":"WR97","name":"Ted Hurst III","team":"TB","price":2,"median":1,"p90":2,"p75":2,"buy":1,"lo":1,"hi":3,"tier":0}];
+const TMETA = {"RB":{"1":{"med":56,"drop":10},"2":{"med":46,"drop":13},"3":{"med":33,"drop":15},"4":{"med":18,"drop":7},"5":{"med":11,"drop":4},"6":{"med":6,"drop":0},"7":{"med":6,"drop":0}},"WR":{"1":{"med":38,"drop":22},"2":{"med":17,"drop":5},"3":{"med":12,"drop":6},"4":{"med":6,"drop":2},"5":{"med":4,"drop":1},"6":{"med":3,"drop":1},"7":{"med":2,"drop":0},"8":{"med":2,"drop":0}},"QB":{"1":{"med":8,"drop":4},"2":{"med":3,"drop":1},"3":{"med":2,"drop":1},"4":{"med":1,"drop":0},"5":{"med":1,"drop":0}},"TE":{"1":{"med":13,"drop":10},"2":{"med":4,"drop":2},"3":{"med":2,"drop":-1},"4":{"med":3,"drop":1},"5":{"med":2,"drop":0}}};
+const BUDGET = 200, ROSTER_MAX = 14;
+const REQS = { QB:[1,1], RB:[2,4], WR:[2,4], TE:[1,3] };
+const load = k => { try { return new Set(JSON.parse(localStorage.getItem(k)||'[]')); } catch(e){ return new Set(); } };
+let picked = load('nfo26_roster'), gone = load('nfo26_gone'), watch = load('nfo26_watch');
+let sort = {k:'adp', dir:1};
+let filt = {q:'', pos:'ALL', round:'ALL', hideGone:false, watchOnly:false};
+
+const tierList=[...new Set(DATA.map(p=>p.tier))].filter(t=>t>0).sort((a,b)=>a-b);
+const rSel=document.getElementById('round');
+tierList.forEach(t=>{const o=document.createElement('option');o.value=t;
+  o.textContent='Tier '+t+'  ('+DATA.filter(p=>p.tier===t).length+' players)';rSel.appendChild(o);});
+{const o=document.createElement('option');o.value='0';o.textContent='Untiered';rSel.appendChild(o);}
+
+// which price metric is displayed & used for all budget math
+let metric = localStorage.getItem('nfo26_metric') || 'mean';
+const pr = p => metric==='median' ? p.median : metric==='p90' ? p.p90 : p.price;
+// which percentile is your walk-away line
+let walkPct = localStorage.getItem('nfo26_walk') || 'p75';
+const walkOf = p => walkPct==='p75' ? p.p75 : p.p90;
+const METRIC_NOTE = {
+  mean:   'Mean — the average price this slot has gone for. The default planning number.',
+  median: 'Median — the typical price (ignores a few runaway bidding wars). Often the more honest "expected" cost.',
+  p90:    '90th percentile — a hot-room, worst-case price. Budget against this to stress-test whether your roster still fits.'
+};
+
+// ---- market tracker: how fast is the room spending? ----
+const POT = BUDGET*10, FULL_DRAFT = 140;
+// historical cumulative % of league money spent by % of players drafted (2021-25 avg)
+const PACE = [[0,0],[.10,.29],[.20,.53],[.30,.69],[.40,.79],[.50,.87],[.60,.92],[.70,.95],[.80,.97],[.90,.99],[1,1]];
+function expectedPct(frac){
+  for(let i=1;i<PACE.length;i++){
+    if(frac<=PACE[i][0]){
+      const [x0,y0]=PACE[i-1],[x1,y1]=PACE[i];
+      return y0+(y1-y0)*((frac-x0)/(x1-x0||1));
+    }
+  }
+  return 1;
+}
+let sales=[];
+try{ sales=JSON.parse(localStorage.getItem('nfo26_sales')||'[]'); }catch(e){ sales=[]; }
+function saveSales(){ localStorage.setItem('nfo26_sales', JSON.stringify(sales)); }
+function renderMarket(){
+  const out=document.getElementById('mktOut');
+  const n=sales.length, spent=sales.reduce((a,b)=>a+b,0);
+  if(!n){ out.innerHTML='<span class="dim">Type each sale price + Enter. After ~15 sales you\'ll get a read on the room.</span>'; return; }
+  const actual=spent/POT, exp=expectedPct(n/FULL_DRAFT), d=(actual-exp)*100;
+  let cls='bal', label='⚖️ BALANCED', tail='prices tracking the model';
+  if(d>=4){ cls='hot'; label='🔥 VERY HOT'; tail='endgame will be dirt cheap — your late dollars are gold'; }
+  else if(d>=2){ cls='hot'; label='🔥 HOT'; tail='money is draining fast; the back half will go cheap'; }
+  else if(d<=-4){ cls='cool'; label='🧊 VERY COOL'; tail='lots of money left — late players will NOT be bargains'; }
+  else if(d<=-2){ cls='cool'; label='🧊 COOL'; tail='cash still in the room; don\'t count on late discounts'; }
+  const lateEst=Math.max(1.5, Math.min(4.5, 3.0 - d*0.17));
+  const conf = n<15 ? ' <span class="dim">(early — needs ~15+ sales)</span>' : '';
+  out.innerHTML='<b>'+n+'</b> sold · <b>$'+spent+'</b> ('+(actual*100).toFixed(0)+'% of pot) · '+
+    'expected '+(exp*100).toFixed(0)+'% → <span class="'+cls+'">'+label+'</span> '+
+    '<span class="dim">'+tail+' · late rounds trending ~$'+lateEst.toFixed(1)+'</span>'+conf;
+}
+
+const keyOf = p => p.adp+'|'+p.name;
+function save(){
+  localStorage.setItem('nfo26_roster', JSON.stringify([...picked]));
+  localStorage.setItem('nfo26_gone', JSON.stringify([...gone]));
+  localStorage.setItem('nfo26_watch', JSON.stringify([...watch]));
+}
+
+function filtered(){
+  let r = DATA.filter(p=>{
+    const k=keyOf(p);
+    if(filt.pos!=='ALL' && p.pos!==filt.pos) return false;
+    if(filt.round!=='ALL' && p.tier!==+filt.round) return false;   // now filters on tier
+    if(filt.hideGone && gone.has(k)) return false;
+    if(filt.watchOnly && !watch.has(k)) return false;
+    if(filt.q){const s=(p.name+' '+p.team).toLowerCase(); if(!s.includes(filt.q)) return false;}
+    return true;
+  });
+  const getv=(o,k)=> k==='price' ? pr(o) : (k==='walk' ? walkOf(o) : o[k]);
+  r.sort((a,b)=>{
+    // gone players sink to the bottom, then apply the chosen sort
+    const ga=gone.has(keyOf(a))?1:0, gb=gone.has(keyOf(b))?1:0;
+    if(ga!==gb) return ga-gb;
+    let x=getv(a,sort.k), y=getv(b,sort.k);
+    if(typeof x==='string') return x.localeCompare(y)*sort.dir;
+    return (x-y)*sort.dir;
+  });
+  return r;
+}
+
+function renderTable(){
+  const rows=document.getElementById('rows'); rows.innerHTML='';
+  const list=filtered();
+  document.getElementById('empty').style.display=list.length?'none':'block';
+  const frag=document.createDocumentFragment();
+  for(const p of list){
+    const k=keyOf(p);
+    const isP=picked.has(k), isG=gone.has(k), isW=watch.has(k);
+    const tr=document.createElement('tr');
+    tr.className=[isG?'gone':'',isP?'picked':'',isW?'watched':''].filter(Boolean).join(' ');
+    tr.innerHTML=`<td class="td-adp">${p.adp}</td>
+      <td class="td-name"><span class="tchip t${p.tier}" title="${p.tier?'Tier '+p.tier:'Untiered'}">${p.tier?'T'+p.tier:'–'}</span><span class="name">${p.name}</span> <span class="rng">${p.team}${p.posRank?' · '+p.posRank:''}</span></td>
+      <td class="td-pos"><span class="pos ${p.pos}">${p.pos}</span></td>
+      <td class="td-rd">${p.round}</td>
+      <td class="price td-price">$${pr(p)}</td>
+      <td class="buy td-buy">$${p.buy}</td>
+      <td class="walk td-walk">$${walkOf(p)}</td>
+      <td class="td-acts"><span class="acts">
+        <button class="act star ${isW?'on':''}" data-a="w" title="Watch (highlight target)">${isW?'★':'☆'}</button>
+        <button class="act draft ${isP?'on':''}" data-a="d" title="Draft to my team">${isP?'✓':'+'}</button>
+        <button class="act gone ${isG?'on':''}" data-a="g" title="Drafted by someone else">✕</button>
+      </span></td>`;
+    tr.querySelectorAll('.act').forEach(btn=>{
+      btn.addEventListener('click',e=>{e.stopPropagation();act(k,btn.dataset.a);});
+    });
+    frag.appendChild(tr);
+  }
+  rows.appendChild(frag);
+}
+
+function act(k,a){
+  if(a==='w'){ watch.has(k)?watch.delete(k):watch.add(k); }
+  else if(a==='d'){ if(picked.has(k)){picked.delete(k);} else {picked.add(k); gone.delete(k);} }
+  else if(a==='g'){ if(gone.has(k)){gone.delete(k);} else {gone.add(k); picked.delete(k);} }
+  save(); renderTable(); renderRoster(); renderTiers();
+}
+
+const setTxt=(id,v)=>{const e=document.getElementById(id);const t=e.querySelector('.v');(t||e).textContent=v;};
+
+// Tier watch, driven by standardized/tiers.txt. TMETA carries each tier's median
+// price and the $ drop to the next tier, so the "cliff" is a real per-tier number
+// instead of one hardcoded count per position.
+const CLIFF_MIN = 5;      // a drop this big or larger counts as a genuine cliff
+function renderTiers(){
+  const body=document.getElementById('tierBody'); body.innerHTML='';
+  const notes=[];
+  ['RB','WR','QB','TE'].forEach(pos=>{
+    const meta=TMETA[pos]; if(!meta) return;
+    const tiers=Object.keys(meta).map(Number).sort((a,b)=>a-b);
+    const row=document.createElement('div'); row.className='tier-row';
+    let html='<span class="pos '+pos+'">'+pos+'</span>';
+    tiers.forEach(t=>{
+      const m=meta[String(t)];
+      const left=DATA.filter(p=>p.pos===pos&&p.tier===t&&!gone.has(keyOf(p))&&!picked.has(keyOf(p))).length;
+      const cliff=m.drop>=CLIFF_MIN;
+      const cls = left===0 ? 'tgone' : (left<=2 ? (cliff?'crit':'warn') : '');
+      html+='<span class="tier-b '+cls+'" title="Tier '+t+' — median $'+m.med+
+            (m.drop>0?'. Next tier is $'+m.drop+' cheaper (~$'+(m.med-m.drop)+').':'.')+
+            '">T'+t+' <b>'+left+'</b></span>';
+      if(left>0&&left<=2&&cliff)
+        notes.push('<b>'+pos+' Tier '+t+': '+left+' left</b> — next tier is about <b>$'+m.drop+
+                   ' cheaper</b> ($'+m.med+' → $'+(m.med-m.drop)+'). Buy before it empties.');
+    });
+    row.innerHTML=html; body.appendChild(row);
+  });
+  document.getElementById('tierNote').innerHTML = notes.length
+    ? '⚠ '+notes.slice(0,3).join('<br>⚠ ')
+    : 'Players left in each tier (your tiers.txt). Hover a tier for its median price and the drop below it. Counts move as you mark players off the board.';
+}
+function renderRoster(){
+  const list=DATA.filter(p=>picked.has(keyOf(p)));
+  const spent=list.reduce((s,p)=>s+pr(p),0), left=BUDGET-spent, n=list.length;
+  const slotsLeft=ROSTER_MAX-n, maxBid=Math.max(left-Math.max(slotsLeft-1,0),0);
+  const avail=DATA.length-gone.size-picked.size;
+
+  setTxt('sSpent','$'+spent); setTxt('sLeft','$'+left); setTxt('sSlots',n+'/'+ROSTER_MAX);
+  setTxt('sMax','$'+(slotsLeft>0?maxBid:0)); setTxt('sAvail',avail);
+  document.getElementById('sLeft').classList.toggle('over',left<0);
+  document.getElementById('sSlots').classList.toggle('over',n>ROSTER_MAX);
+  setTxt('rSpent','$'+spent); setTxt('rLeft','$'+left); setTxt('rCount',n+' / '+ROSTER_MAX);
+  document.getElementById('rMax').innerHTML='Max bid on next player: <b>$'+(slotsLeft>0?maxBid:0)+'</b>';
+  const meter=document.getElementById('meter');
+  meter.querySelector('i').style.width=Math.min(spent/BUDGET*100,100)+'%';
+  meter.classList.toggle('over',left<0);
+
+  const counts={QB:0,RB:0,WR:0,TE:0};
+  list.forEach(p=>counts[p.pos]!==undefined&&counts[p.pos]++);
+  const reqs=document.getElementById('reqs'); reqs.innerHTML='';
+  for(const pos of ['RB','WR','QB','TE']){
+    const [mn,mx]=REQS[pos], c=counts[pos];
+    const div=document.createElement('div');
+    div.className='req '+(c<mn?'short':'ok');
+    div.innerHTML=`<span><span class="pos ${pos}">${pos}</span></span><span class="cnt">${c} <span style="color:var(--muted)">(start ${mn}${mx>mn?'–'+mx:''})</span></span>`;
+    reqs.appendChild(div);
+  }
+
+  const wrap=document.getElementById('picks'); wrap.innerHTML='';
+  for(const pos of ['QB','RB','WR','TE']){
+    const grp=list.filter(p=>p.pos===pos).sort((a,b)=>b.price-a.price);
+    if(!grp.length)continue;
+    const g=document.createElement('div'); g.className='slot-group';
+    g.innerHTML=`<div class="slot-h">${pos} · ${grp.length}</div>`;
+    grp.forEach(p=>{
+      const row=document.createElement('div'); row.className='pick';
+      row.innerHTML=`<span>${p.name} <span class="rng">${p.team}</span></span><span><span class="pp">$${pr(p)}</span> <button class="x" title="remove">✕</button></span>`;
+      row.querySelector('.x').addEventListener('click',()=>act(keyOf(p),'d'));
+      g.appendChild(row);
+    });
+    wrap.appendChild(g);
+  }
+
+  const w=document.getElementById('warn');
+  const canStart=counts.QB>=1&&counts.RB>=2&&counts.WR>=2&&counts.TE>=1&&n>=8;
+  if(left<0){ w.className='warn show bad'; w.textContent='⚠ Over budget by $'+(-left)+'.'; }
+  else if(n>ROSTER_MAX){ w.className='warn show bad'; w.textContent='⚠ Over the 14-man roster limit.'; }
+  else if(n===ROSTER_MAX&&canStart){ w.className='warn show good'; w.textContent='✓ Full roster, legal lineup, under budget.'; }
+  else if(n>0&&!canStart){
+    const need=[];
+    if(counts.QB<1)need.push('1 QB'); if(counts.RB<2)need.push((2-counts.RB)+' RB');
+    if(counts.WR<2)need.push((2-counts.WR)+' WR'); if(counts.TE<1)need.push('1 TE');
+    w.className='warn show info'; w.textContent='Still need for a legal lineup: '+(need.join(', ')||('+'+(8-n)+' starters'));
+  } else { w.className='warn'; w.textContent=''; }
+
+  // watchlist (watched, not yet drafted by anyone)
+  const wl=DATA.filter(p=>watch.has(keyOf(p))&&!picked.has(keyOf(p))&&!gone.has(keyOf(p)));
+  setTxt('wCount',wl.length);
+  document.getElementById('wCost').innerHTML='Total if won at model price: <b>$'+wl.reduce((s,p)=>s+pr(p),0)+'</b>';
+  const wlEl=document.getElementById('watchList'); wlEl.innerHTML='';
+  if(!wl.length){ wlEl.innerHTML='<div class="watch-empty">Tap ☆ on any player to add a target.</div>'; }
+  wl.sort((a,b)=>a.adp-b.adp).forEach(p=>{
+    const row=document.createElement('div'); row.className='pick';
+    row.innerHTML=`<span><span class="pos ${p.pos}">${p.pos}</span> ${p.name} <span class="rng">$${p.lo}–${p.hi}</span></span>
+      <span><span class="pp">$${pr(p)}</span> <button class="x" title="unwatch">✕</button></span>`;
+    row.querySelector('.x').addEventListener('click',()=>act(keyOf(p),'w'));
+    wlEl.appendChild(row);
+  });
+}
+
+document.getElementById('q').addEventListener('input',e=>{filt.q=e.target.value.toLowerCase().trim();renderTable();});
+document.getElementById('posSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  filt.pos=b.dataset.pos;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));renderTable();});
+rSel.addEventListener('change',e=>{filt.round=e.target.value;renderTable();});
+function wireToggle(id,key){
+  const el=document.getElementById(id), cb=el.querySelector('input');
+  el.addEventListener('click',()=>{cb.checked=!cb.checked;filt[key]=cb.checked;el.classList.toggle('on',cb.checked);renderTable();});
+}
+wireToggle('tHideGone','hideGone'); wireToggle('tWatchOnly','watchOnly');
+
+// price metric: Mean / Median / 90th  (drives the table AND all budget math)
+function applyMetric(){
+  document.querySelectorAll('#metricSeg button').forEach(b=>b.classList.toggle('on', b.dataset.metric===metric));
+  const lbl={mean:'Mean',median:'Median',p90:'90th %ile'}[metric];
+  document.getElementById('metricNote').innerHTML='<b>Showing '+lbl+' prices.</b> '+METRIC_NOTE[metric];
+  renderTable(); renderRoster();
+}
+function applyWalk(){
+  document.querySelectorAll('#walkSeg button').forEach(b=>b.classList.toggle('on', b.dataset.walk===walkPct));
+  const th=document.getElementById('walkTh');
+  if(th) th.textContent = walkPct==='p75' ? 'Walk away (75th)' : 'Walk away (90th)';
+  renderTable();
+}
+document.getElementById('walkSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  walkPct=b.dataset.walk; localStorage.setItem('nfo26_walk',walkPct); applyWalk();
+});
+document.getElementById('metricSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  metric=b.dataset.metric; localStorage.setItem('nfo26_metric',metric); applyMetric();
+});
+
+// layout: Auto (follow width) / Table / Cards
+const mq=window.matchMedia('(max-width:640px)');
+let viewPref=localStorage.getItem('nfo26_view')||'auto';
+function applyView(){
+  const eff = viewPref==='auto' ? (mq.matches?'cards':'table') : viewPref;
+  document.documentElement.classList.toggle('view-cards', eff==='cards');
+  document.querySelectorAll('#viewSeg button').forEach(b=>b.classList.toggle('on', b.dataset.view===viewPref));
+}
+try{ mq.addEventListener('change',()=>{ if(viewPref==='auto') applyView(); }); }catch(e){ mq.addListener(()=>{ if(viewPref==='auto') applyView(); }); }
+document.getElementById('viewSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  viewPref=b.dataset.view; localStorage.setItem('nfo26_view',viewPref); applyView();
+});
+applyView();
+document.querySelectorAll('thead th.sortable').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const k=th.dataset.k;
+    if(sort.k===k)sort.dir*=-1;else{sort.k=k;sort.dir=1;}
+    document.querySelectorAll('thead th').forEach(x=>x.classList.remove('asc','desc'));
+    th.classList.add(sort.dir===1?'asc':'desc');
+    renderTable();
+  });
+});
+document.getElementById('clear').addEventListener('click',()=>{
+  if(confirm('Clear your drafted roster? (Watchlist and crossed-off players stay.)')){picked.clear();save();renderTable();renderRoster();}
+});
+
+(function(){
+  const inp=document.getElementById('mktIn');
+  inp.addEventListener('keydown',e=>{
+    if(e.key!=='Enter') return;
+    const v=parseInt(inp.value,10);
+    if(!isNaN(v)&&v>=1){ sales.push(v); saveSales(); renderMarket(); }
+    inp.value=''; inp.focus();
+  });
+  document.getElementById('mktUndo').addEventListener('click',()=>{ sales.pop(); saveSales(); renderMarket(); });
+  document.getElementById('mktReset').addEventListener('click',()=>{
+    if(sales.length && confirm('Clear the market tracker?')){ sales=[]; saveSales(); renderMarket(); }
+  });
+  renderMarket();
+})();
+
+applyWalk();
+applyMetric();   // sets the metric UI then renders table + roster
+renderTiers();
+</script>
+</body>
+</html>

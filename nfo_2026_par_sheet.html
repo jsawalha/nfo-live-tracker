@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFO 2026 Par Sheet</title>
+<style>
+  :root{
+    --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#f2f1ec;
+    --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+    --accent:#2a78d6; --good:#0ca30c; --crit:#d03b3b; --warn:#c98500;
+    --rb:#2a78d6; --wr:#1baf7a; --qb:#eb6834; --te:#7a5cff;
+    --shadow:0 1px 2px rgba(11,11,11,.04),0 4px 16px rgba(11,11,11,.05);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232320;
+      --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.12);
+      --accent:#3987e5; --good:#0ca30c; --crit:#e66767; --warn:#eda100;
+      --rb:#3987e5; --wr:#199e70; --qb:#d95926; --te:#9085e9; --shadow:none;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+    font:12.5px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif}
+  header{background:var(--surface);border-bottom:1px solid var(--border);box-shadow:var(--shadow);
+    position:sticky;top:0;z-index:10}
+  .hd{max-width:560px;margin:0 auto;padding:8px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  h1{font-size:1.05rem;margin:0;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:.8rem;margin:2px 0 0}
+  .tiles{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .tile{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+    padding:3px 8px;text-align:center;min-width:64px}
+  .tile .v{font-size:.95rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15}
+  .tile .k{font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:2px}
+  .tile.good .v{color:var(--good)} .tile.bad .v{color:var(--crit)}
+  .wrap{max-width:560px;margin:0 auto;padding:10px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    box-shadow:var(--shadow);padding:8px;margin-bottom:10px}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
+    text-align:left;padding:3px 4px;font-weight:700;border-bottom:1px solid var(--axis)}
+  th.r,td.r{text-align:right}
+  td{padding:1px 4px;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
+  tr.grp td{background:var(--surface-2);font-weight:700;font-size:.6rem;text-transform:uppercase;
+    letter-spacing:.05em;color:var(--ink-2);border:none;padding:3px 4px}
+  tr.tot td{font-weight:700;background:color-mix(in srgb,var(--accent) 7%,transparent);
+    border-top:1px solid var(--axis)}
+  tr.filled{background:color-mix(in srgb,var(--good) 7%,transparent)}
+  input,select{font:inherit;background:var(--surface);color:var(--ink);
+    border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:12px}
+  input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  input.bud{width:50px;text-align:right;font-weight:600}
+  input.price{width:50px;text-align:right}
+  input.name{width:100%;min-width:90px}
+  select.pos{width:52px;font-weight:700}
+  .diff{font-weight:700;font-variant-numeric:tabular-nums}
+  .diff.good{color:var(--good)} .diff.bad{color:var(--crit)}
+  .num{width:26px;color:var(--muted);font-size:.78rem}
+  .btn{border:1px solid var(--border);background:var(--surface);color:var(--ink-2);
+    border-radius:7px;padding:4px 9px;cursor:pointer;font:inherit;font-size:.74rem;text-decoration:none}
+  .btn:hover{border-color:var(--axis);color:var(--ink)}
+  .btn.warn:hover{color:var(--crit);border-color:var(--crit)}
+  .bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .note{color:var(--muted);font-size:.68rem;margin:6px 0 0}
+  .alert{padding:5px 8px;border-radius:7px;font-size:.72rem;margin-top:6px;display:none}
+  .alert.show{display:block}
+  .alert.bad{background:color-mix(in srgb,var(--crit) 12%,transparent);color:var(--crit)}
+  .alert.ok{background:color-mix(in srgb,var(--good) 12%,transparent);color:var(--good)}
+  .pos-b{display:inline-block;font-size:.62rem;font-weight:700;padding:2px 6px;
+    border-radius:99px;color:#fff;margin-right:4px}
+  .pos-b.RB{background:var(--rb)}.pos-b.WR{background:var(--wr)}
+  .pos-b.QB{background:var(--qb)}.pos-b.TE{background:var(--te)}
+  @media(max-width:680px){
+    input.name{min-width:90px}
+    input.bud,input.price,select.pos{width:62px}
+    td,th{padding:3px}
+    .num{display:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="hd">
+    <div>
+      <h1>🎯 NFO 2026 Par Sheet</h1>
+      <p class="sub">San Di Lello build (2021-25 avg) · 7 RB / 5 WR / 1 QB / 1 TE · edit any slot</p>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="v" id="tPlan">$200</div><div class="k">Plan</div></div>
+      <div class="tile"><div class="v" id="tSpent">$0</div><div class="k">Spent</div></div>
+      <div class="tile"><div class="v" id="tLeft">$200</div><div class="k">Left of $200</div></div>
+      <div class="tile" id="tParBox"><div class="v" id="tPar">—</div><div class="k">vs plan</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="bar">
+    <button class="btn" id="resetPlan">Reset budget plan</button>
+    <button class="btn warn" id="clearPlayers">Clear players &amp; prices</button>
+    <a class="btn" href="nfo_2026_draft_board.html">← Draft board</a>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead><tr>
+        <th class="num">#</th><th>Pos</th><th class="r">Budget</th>
+        <th>Player</th><th class="r">Price</th><th class="r">Difference</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="alert" id="alert"></div>
+    <p class="note">Difference = <b>budget − price</b>. Green means you came in under your plan (surplus),
+      red means you went over (deficit). Player names autocomplete from the price model.</p>
+  </div>
+</div>
+
+<datalist id="plist"></datalist>
+
+<script>
+const DATA = [{"n":"Jahmyr Gibbs","p":"RB","$":58},{"n":"Bijan Robinson","p":"RB","$":57},{"n":"Christian McCaffrey","p":"RB","$":56},{"n":"Jonathan Taylor","p":"RB","$":54},{"n":"James Cook III","p":"RB","$":53},{"n":"De'Von Achane","p":"RB","$":51},{"n":"Ashton Jeanty","p":"RB","$":49},{"n":"Ja'Marr Chase","p":"WR","$":47},{"n":"Omarion Hampton","p":"RB","$":47},{"n":"Puka Nacua","p":"WR","$":46},{"n":"Derrick Henry","p":"RB","$":46},{"n":"Jaxon Smith-Njigba","p":"WR","$":44},{"n":"Saquon Barkley","p":"RB","$":44},{"n":"Chase Brown","p":"RB","$":43},{"n":"Amon-Ra St. Brown","p":"WR","$":42},{"n":"Kenneth Walker III","p":"RB","$":41},{"n":"CeeDee Lamb","p":"WR","$":40},{"n":"Kyren Williams","p":"RB","$":38},{"n":"Justin Jefferson","p":"WR","$":37},{"n":"Jeremiyah Love","p":"RB","$":36},{"n":"Drake London","p":"WR","$":35},{"n":"Josh Jacobs","p":"RB","$":33},{"n":"George Pickens","p":"WR","$":31},{"n":"Nico Collins","p":"WR","$":29},{"n":"Javonte Williams","p":"RB","$":29},{"n":"A.J. Brown","p":"WR","$":27},{"n":"Breece Hall","p":"RB","$":27},{"n":"Chris Olave","p":"WR","$":25},{"n":"Bucky Irving","p":"RB","$":24},{"n":"Malik Nabers","p":"WR","$":23},{"n":"Travis Etienne Jr.","p":"RB","$":22},{"n":"Rashee Rice","p":"WR","$":21},{"n":"Cam Skattebo","p":"RB","$":20},{"n":"Trey McBride","p":"TE","$":19},{"n":"Quinshon Judkins","p":"RB","$":19},{"n":"Tetairoa McMillan","p":"WR","$":19},{"n":"Garrett Wilson","p":"WR","$":18},{"n":"Brock Bowers","p":"TE","$":17},{"n":"Tee Higgins","p":"WR","$":17},{"n":"TreVeyon Henderson","p":"RB","$":17},{"n":"Zay Flowers","p":"WR","$":16},{"n":"Bhayshul Tuten","p":"RB","$":16},{"n":"Luther Burden III","p":"WR","$":15},{"n":"David Montgomery","p":"RB","$":15},{"n":"Josh Allen","p":"QB","$":14},{"n":"Emeka Egbuka","p":"WR","$":14},{"n":"DeVonta Smith","p":"WR","$":14},{"n":"D'Andre Swift","p":"RB","$":14},{"n":"Jaylen Warren","p":"RB","$":14},{"n":"Ladd McConkey","p":"WR","$":13},{"n":"Jaylen Waddle","p":"WR","$":13},{"n":"RJ Harvey","p":"RB","$":13},{"n":"Lamar Jackson","p":"QB","$":12},{"n":"DJ Moore","p":"WR","$":12},{"n":"Davante Adams","p":"WR","$":12},{"n":"Jameson Williams","p":"WR","$":12},{"n":"Terry McLaurin","p":"WR","$":12},{"n":"Rhamondre Stevenson","p":"RB","$":12},{"n":"Mike Evans","p":"WR","$":11},{"n":"Rico Dowdle","p":"RB","$":11},{"n":"Rome Odunze","p":"WR","$":10},{"n":"Christian Watson","p":"WR","$":10},{"n":"Jadarian Price","p":"RB","$":10},{"n":"Colston Loveland","p":"TE","$":9},{"n":"Carnell Tate","p":"WR","$":9},{"n":"Tony Pollard","p":"RB","$":9},{"n":"Drake Maye","p":"QB","$":8},{"n":"Parker Washington","p":"WR","$":8},{"n":"Kyle Monangai","p":"RB","$":8},{"n":"Joe Burrow","p":"QB","$":7},{"n":"Tyler Warren","p":"TE","$":7},{"n":"Michael Wilson","p":"WR","$":7},{"n":"Chuba Hubbard","p":"RB","$":7},{"n":"Jayden Daniels","p":"QB","$":6},{"n":"Harold Fannin Jr.","p":"TE","$":6},{"n":"Brian Thomas Jr.","p":"WR","$":6},{"n":"Courtland Sutton","p":"WR","$":6},{"n":"J.K. Dobbins","p":"RB","$":6},{"n":"Blake Corum","p":"RB","$":6},{"n":"Kenny Gainwell","p":"RB","$":6},{"n":"Jordan Mason","p":"RB","$":6},{"n":"Jacory Croskey-Merritt","p":"RB","$":6},{"n":"Jalen Hurts","p":"QB","$":5},{"n":"Jordyn Tyson","p":"WR","$":5},{"n":"Aaron Jones Sr.","p":"RB","$":5},{"n":"Tyler Allgeier","p":"RB","$":5},{"n":"Tucker Kraft","p":"TE","$":4},{"n":"Marvin Harrison Jr.","p":"WR","$":4},{"n":"DK Metcalf","p":"WR","$":4},{"n":"Caleb Williams","p":"QB","$":4},{"n":"Chris Godwin Jr.","p":"WR","$":4},{"n":"Josh Downs","p":"WR","$":4},{"n":"Quentin Johnston","p":"WR","$":4},{"n":"Woody Marks","p":"RB","$":4},{"n":"Zach Charbonnet","p":"RB","$":4},{"n":"Brian Robinson Jr.","p":"RB","$":4},{"n":"Rachaad White","p":"RB","$":4},{"n":"Stefon Diggs","p":"WR","$":4},{"n":"Jayden Reed","p":"WR","$":4},{"n":"Romeo Doubs","p":"WR","$":4},{"n":"Xavier Worthy","p":"WR","$":4},{"n":"Kyle Pitts Sr.","p":"TE","$":3},{"n":"Sam LaPorta","p":"TE","$":3},{"n":"Justin Herbert","p":"QB","$":3},{"n":"Trevor Lawrence","p":"QB","$":3},{"n":"Wan'Dale Robinson","p":"WR","$":3},{"n":"Jakobi Meyers","p":"WR","$":3},{"n":"Alec Pierce","p":"WR","$":3},{"n":"Jordan Addison","p":"WR","$":3},{"n":"Michael Pittman Jr.","p":"WR","$":3},{"n":"Dallas Goedert","p":"TE","$":3},{"n":"Juwan Johnson","p":"TE","$":3},{"n":"Tyrone Tracy Jr.","p":"RB","$":3},{"n":"Jonathon Brooks","p":"RB","$":3},{"n":"Hunter Henry","p":"TE","$":3},{"n":"Alvin Kamara","p":"RB","$":3},{"n":"Tyjae Spears","p":"RB","$":3},{"n":"Brenton Strange","p":"TE","$":3},{"n":"Oronde Gadsden II","p":"TE","$":3},{"n":"Khalil Shakir","p":"WR","$":3},{"n":"MarShawn Lloyd","p":"RB","$":3},{"n":"Jaylen Wright","p":"RB","$":3},{"n":"Emanuel Wilson","p":"RB","$":3},{"n":"Justice Hill","p":"RB","$":3},{"n":"Joe Mixon ","p":"RB","$":3},{"n":"Dak Prescott","p":"QB","$":2},{"n":"Jaxson Dart","p":"QB","$":2},{"n":"Dalton Kincaid","p":"TE","$":2},{"n":"Travis Kelce","p":"TE","$":2},{"n":"George Kittle","p":"TE","$":2},{"n":"Isaiah Likely","p":"TE","$":2},{"n":"Patrick Mahomes II","p":"QB","$":2},{"n":"Jake Ferguson","p":"TE","$":2},{"n":"Mark Andrews","p":"TE","$":2},{"n":"Brock Purdy","p":"QB","$":2},{"n":"Bo Nix","p":"QB","$":2},{"n":"Matthew Stafford","p":"QB","$":2},{"n":"Jonah Coleman","p":"RB","$":2},{"n":"KC Concepcion","p":"WR","$":2},{"n":"Jayden Higgins","p":"WR","$":2},{"n":"Deebo Samuel Sr.","p":"WR","$":2},{"n":"Kenyon Sadiq","p":"TE","$":2},{"n":"Jalen Coker","p":"WR","$":2},{"n":"Dalton Schultz","p":"TE","$":2},{"n":"Chris Rodriguez Jr.","p":"RB","$":2},{"n":"T.J. Hockenson","p":"TE","$":2},{"n":"Chig Okonkwo","p":"TE","$":2},{"n":"Dylan Sampson","p":"RB","$":2},{"n":"Jauan Jennings","p":"WR","$":2},{"n":"Keaton Mitchell","p":"RB","$":2},{"n":"David Njoku","p":"TE","$":2},{"n":"Isiah Pacheco","p":"RB","$":2},{"n":"Tank Bigsby","p":"RB","$":2},{"n":"James Conner","p":"RB","$":2},{"n":"Rashid Shaheed","p":"WR","$":2},{"n":"Mike Washington Jr.","p":"RB","$":2},{"n":"Matthew Golden","p":"WR","$":2},{"n":"Braelon Allen","p":"RB","$":2},{"n":"Emmett Johnson","p":"RB","$":2},{"n":"Denzel Boston","p":"WR","$":2},{"n":"Jerry Jeudy","p":"WR","$":2},{"n":"Omar Cooper Jr.","p":"WR","$":2},{"n":"Kayshon Boutte","p":"WR","$":2},{"n":"Calvin Ridley","p":"WR","$":2},{"n":"Sean Tucker","p":"RB","$":2},{"n":"Kimani Vidal","p":"RB","$":2},{"n":"Ja'Kobi Lane","p":"WR","$":2},{"n":"Gunnar Helm","p":"TE","$":2},{"n":"Nicholas Singleton","p":"RB","$":2},{"n":"Ray Davis","p":"RB","$":2},{"n":"Colby Parkinson","p":"TE","$":2},{"n":"Kaytron Allen","p":"RB","$":2},{"n":"Jaydon Blue","p":"RB","$":2},{"n":"Trey Benson","p":"RB","$":2},{"n":"Eli Stowers","p":"TE","$":2},{"n":"Demond Claiborne","p":"RB","$":2},{"n":"Mason Taylor","p":"TE","$":2},{"n":"Theo Johnson","p":"TE","$":2},{"n":"Jake Tonges","p":"TE","$":2},{"n":"Tua Tagovailoa","p":"QB","$":2},{"n":"Geno Smith","p":"QB","$":2},{"n":"Greg Dulcich","p":"TE","$":2},{"n":"Dontayvion Wicks","p":"WR","$":2},{"n":"Michael Penix Jr.","p":"QB","$":2},{"n":"Shedeur Sanders","p":"QB","$":2},{"n":"Kaleb Johnson","p":"RB","$":2},{"n":"Germie Bernard","p":"WR","$":2},{"n":"Devin Neal","p":"RB","$":2},{"n":"Ryan Flournoy","p":"WR","$":2},{"n":"Najee Harris","p":"RB","$":2},{"n":"Kaelon Black","p":"RB","$":2},{"n":"Troy Franklin","p":"WR","$":2},{"n":"Kirk Cousins","p":"QB","$":2},{"n":"George Holani","p":"RB","$":2},{"n":"Chimere Dike","p":"WR","$":2},{"n":"J.J. McCarthy","p":"QB","$":2},{"n":"Ty Johnson","p":"RB","$":2},{"n":"Pat Freiermuth","p":"TE","$":2},{"n":"Kendre Miller","p":"RB","$":2},{"n":"Cooper Kupp","p":"WR","$":2},{"n":"Brashard Smith","p":"RB","$":2},{"n":"Cyrus Allen","p":"WR","$":2},{"n":"Darnell Mooney","p":"WR","$":2},{"n":"Christian Kirk","p":"WR","$":2},{"n":"Deshaun Watson","p":"QB","$":2},{"n":"Austin Ekeler ","p":"RB","$":2},{"n":"Elic Ayomanor","p":"WR","$":2},{"n":"Caleb Douglas","p":"WR","$":2},{"n":"Jordan James","p":"RB","$":2},{"n":"Keenan Allen","p":"WR","$":2},{"n":"Audric Estime","p":"RB","$":2},{"n":"Jaylin Noel","p":"WR","$":2},{"n":"Carson Beck","p":"QB","$":2},{"n":"Devin Singletary","p":"RB","$":2},{"n":"Jarquez Hunter","p":"RB","$":2},{"n":"Marvin Mims Jr.","p":"WR","$":2},{"n":"Jalen Tolbert","p":"WR","$":2},{"n":"Evan Engram","p":"TE","$":2},{"n":"Kyle Williams","p":"WR","$":2},{"n":"Ted Hurst III","p":"WR","$":2},{"n":"Jared Goff","p":"QB","$":1},{"n":"Jordan Love","p":"QB","$":1},{"n":"Baker Mayfield","p":"QB","$":1},{"n":"Tyler Shough","p":"QB","$":1},{"n":"Malik Willis","p":"QB","$":1},{"n":"Kyler Murray","p":"QB","$":1},{"n":"Sam Darnold","p":"QB","$":1},{"n":"C.J. Stroud","p":"QB","$":1},{"n":"AJ Barner","p":"TE","$":1},{"n":"Jalen McMillan","p":"WR","$":1},{"n":"Cade Otton","p":"TE","$":1},{"n":"Terrance Ferguson","p":"TE","$":1},{"n":"Jalen Nailor","p":"WR","$":1},{"n":"Cam Ward","p":"QB","$":1},{"n":"Travis Hunter","p":"WR","$":1},{"n":"Adonai Mitchell","p":"WR","$":1},{"n":"De'Zhaun Stribling","p":"WR","$":1},{"n":"Tyreek Hill ","p":"WR","$":1},{"n":"Daniel Jones","p":"QB","$":1},{"n":"Makai Lemon","p":"WR","$":1},{"n":"Tank Dell","p":"WR","$":1},{"n":"Tre' Harris","p":"WR","$":1},{"n":"Bryce Young","p":"QB","$":1},{"n":"Fernando Mendoza","p":"QB","$":1},{"n":"Jacoby Brissett","p":"QB","$":1},{"n":"Tre Tucker","p":"WR","$":1},{"n":"Zachariah Branch","p":"WR","$":1},{"n":"Antonio Williams","p":"WR","$":1},{"n":"Malachi Fields","p":"WR","$":1},{"n":"Aaron Rodgers","p":"QB","$":1},{"n":"Isaac TeSlaa","p":"WR","$":1},{"n":"Pat Bryant","p":"WR","$":1},{"n":"Malik Washington","p":"WR","$":1},{"n":"Brandon Aiyuk","p":"WR","$":1}];
+const BUDGET = 200;
+const POSES = ['RB','WR','TE','QB'];
+// NFO 2026 plan — two RB2 anchors, value-WR, 2-WR lineup: 7 RB / 5 WR / 1 QB / 1 TE
+// per-slot ($140 RB · $47 WR · $10 QB · $3 TE = $200); top-2 RB = $97 (<=110 cap)
+const DEFAULT_SLOTS = [
+  {g:'S',pos:'RB',b:49},{g:'S',pos:'RB',b:48},{g:'S',pos:'RB',b:24},{g:'S',pos:'RB',b:10},
+  {g:'S',pos:'WR',b:20},{g:'S',pos:'WR',b:18},{g:'S',pos:'TE',b:3},{g:'S',pos:'QB',b:10},
+  {g:'B',pos:'RB',b:7},{g:'B',pos:'RB',b:1},{g:'B',pos:'RB',b:1},{g:'B',pos:'WR',b:7},
+  {g:'B',pos:'WR',b:1},{g:'B',pos:'WR',b:1}
+];
+function load(){
+  try{
+    const v=JSON.parse(localStorage.getItem('nfo26_par')||'null');
+    if(v && Array.isArray(v.slots) && v.slots.length===14) return v.slots;
+  }catch(e){}
+  return DEFAULT_SLOTS.map(x=>({...x, name:'', price:''}));
+}
+let slots = load();
+function save(){ localStorage.setItem('nfo26_par', JSON.stringify({slots})); }
+
+// autocomplete list
+const dl=document.getElementById('plist');
+DATA.forEach(p=>{ const o=document.createElement('option');
+  o.value=p.n; o.label=p.p+' · model $'+p['$']; dl.appendChild(o); });
+const MODEL={}; DATA.forEach(p=>{ MODEL[p.n.toLowerCase()]=p; });
+
+const num = v => { const n=parseInt(v,10); return isNaN(n)?null:n; };
+
+function render(){
+  const tb=document.getElementById('rows'); tb.innerHTML='';
+  let planTot=0, spentTot=0, diffTot=0;
+  [['S','Starters (8)'],['B','Bench (6)']].forEach(([grp,label])=>{
+    const hdr=document.createElement('tr'); hdr.className='grp';
+    hdr.innerHTML='<td colspan="6">'+label+'</td>'; tb.appendChild(hdr);
+    let gPlan=0,gSpent=0,gDiff=0,i2=0;
+    slots.forEach((s,i)=>{
+      if(s.g!==grp) return;
+      i2++;
+      const price=num(s.price), filled=price!==null;
+      const d = filled ? (s.b - price) : 0;
+      gPlan+=s.b; if(filled){ gSpent+=price; gDiff+=d; }
+      const tr=document.createElement('tr'); tr.dataset.row=i; if(filled) tr.className='filled';
+      tr.innerHTML=
+        '<td class="num">'+i2+'</td>'+
+        '<td><select class="pos" data-i="'+i+'" data-f="pos">'+
+          POSES.map(p=>'<option'+(p===s.pos?' selected':'')+'>'+p+'</option>').join('')+'</select></td>'+
+        '<td class="r"><input class="bud" type="number" min="0" data-i="'+i+'" data-f="b" value="'+s.b+'"></td>'+
+        '<td><input class="name" list="plist" placeholder="player…" data-i="'+i+'" data-f="name" value="'+(s.name||'').replace(/"/g,'&quot;')+'"></td>'+
+        '<td class="r"><input class="price" type="number" min="0" placeholder="—" data-i="'+i+'" data-f="price" value="'+(s.price===''?'':s.price)+'"></td>'+
+        '<td class="r"><span class="diff" data-diff="'+i+'">'+
+          (filled ? (d>0?'+':'')+d : '') + '</span></td>';
+      tb.appendChild(tr);
+    });
+    planTot+=gPlan; spentTot+=gSpent; diffTot+=gDiff;
+    const tot=document.createElement('tr'); tot.className='tot'; tot.dataset.tot=grp;
+    tot.innerHTML='<td class="num"></td><td>TOTAL</td><td class="r" data-tp="'+grp+'">$'+gPlan+'</td><td></td>'+
+      '<td class="r" data-ts="'+grp+'">$'+gSpent+'</td><td class="r" data-td="'+grp+'">'+
+      (gDiff===0?'0':(gDiff>0?'+':'')+gDiff)+'</td>';
+    tb.appendChild(tot);
+  });
+
+  updateSummary(planTot, spentTot, diffTot);
+  save();
+}
+
+function updateSummary(planTot, spentTot, diffTot){
+  document.getElementById('tPlan').textContent='$'+planTot;
+  document.getElementById('tSpent').textContent='$'+spentTot;
+  document.getElementById('tLeft').textContent='$'+(BUDGET-spentTot);
+  const par=document.getElementById('tPar'), box=document.getElementById('tParBox');
+  const anyFilled = slots.some(s=>num(s.price)!==null);
+  par.textContent = anyFilled ? ((diffTot>0?'+$':(diffTot<0?'-$':'$'))+Math.abs(diffTot)) : '—';
+  box.className='tile '+(anyFilled ? (diffTot>0?'good':(diffTot<0?'bad':'')) : '');
+
+  const al=document.getElementById('alert');
+  if(planTot!==BUDGET){
+    al.className='alert show bad';
+    al.innerHTML='⚠ Your budget plan totals <b>$'+planTot+'</b>, not $'+BUDGET+
+      ' ('+(planTot>BUDGET?'$'+(planTot-BUDGET)+' over':'$'+(BUDGET-planTot)+' unallocated')+').';
+  } else if(spentTot>BUDGET){
+    al.className='alert show bad';
+    al.innerHTML='⚠ You have spent <b>$'+spentTot+'</b> — over the $'+BUDGET+' cap.';
+  } else if(anyFilled){
+    al.className='alert show ok';
+    al.innerHTML='Plan $'+planTot+' · spent $'+spentTot+' · <b>$'+(BUDGET-spentTot)+'</b> left for '+
+      slots.filter(s=>num(s.price)===null).length+' open slot(s).';
+  } else { al.className='alert'; al.innerHTML=''; }
+}
+
+function recalc(){
+  let planTot=0, spentTot=0, diffTot=0;
+  ['S','B'].forEach(grp=>{
+    let gPlan=0,gSpent=0,gDiff=0;
+    slots.forEach((s,i)=>{
+      if(s.g!==grp) return;
+      const price=num(s.price), filled=price!==null, d=filled?(s.b-price):0;
+      gPlan+=s.b; if(filled){ gSpent+=price; gDiff+=d; }
+      const cell=document.querySelector('[data-diff="'+i+'"]');
+      if(cell){ cell.textContent = filled ? ((d>0?'+':'')+d) : '';
+                cell.className = 'diff '+(d>0?'good':(d<0?'bad':'')); }
+      const row=document.querySelector('[data-row="'+i+'"]');
+      if(row) row.className = filled ? 'filled' : '';
+    });
+    planTot+=gPlan; spentTot+=gSpent; diffTot+=gDiff;
+    const tp=document.querySelector('[data-tp="'+grp+'"]'); if(tp) tp.textContent='$'+gPlan;
+    const ts=document.querySelector('[data-ts="'+grp+'"]'); if(ts) ts.textContent='$'+gSpent;
+    const td=document.querySelector('[data-td="'+grp+'"]');
+    if(td) td.textContent=(gDiff===0?'0':(gDiff>0?'+':'')+gDiff);
+  });
+  updateSummary(planTot, spentTot, diffTot);
+  save();
+}
+document.getElementById('rows').addEventListener('input', e=>{
+  const el=e.target, i=el.dataset.i, f=el.dataset.f;
+  if(i===undefined||!f) return;
+  const s=slots[+i];
+  if(f==='b'){ s.b = num(el.value)===null?0:num(el.value); }
+  else if(f==='pos'){ s.pos = el.value; }
+  else if(f==='name'){
+    s.name = el.value;
+    const m = MODEL[el.value.toLowerCase()];
+    if(m && !s.price && !s._auto){ s._auto=true; }        // remember we saw a model match
+  }
+  else if(f==='price'){ s.price = el.value===''?'':(num(el.value)===null?'':num(el.value)); }
+  recalc();   // update numbers in place — never rebuild the row you're typing in
+});
+
+document.getElementById('resetPlan').addEventListener('click',()=>{
+  if(!confirm('Reset the budget plan to the default 14 slots? (players/prices kept)')) return;
+  DEFAULT_SLOTS.forEach((d,i)=>{ slots[i].g=d.g; slots[i].pos=d.pos; slots[i].b=d.b; });
+  render();
+});
+document.getElementById('clearPlayers').addEventListener('click',()=>{
+  if(!confirm('Clear all players and prices? (budget plan kept)')) return;
+  slots.forEach(s=>{ s.name=''; s.price=''; });
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

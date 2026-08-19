@@ -1,0 +1,7 @@
+# nothing sensitive should ever live here, but just in case:
+.env
+*.db
+mfl_ingestion.py
+__pycache__/
+*.pyc
+.DS_Store
