@@ -30,11 +30,6 @@ except Exception:
 
 HERE = Path(__file__).resolve().parent
 DEMO_MSG = (
-    "Robinson, Bijan ATL RB won by Down by the Rivers for $58.00 [9:41:02 p.m.] "
-    "ReD PantY NiTe can nominate the next player for auction. [9:41:02 p.m.] "
-    "St. Brown, Amon-Ra DET WR won by The Cats for $43.00 [9:44:10 p.m.] "
-    "Tuten, Bhayshul JAC RB won by Basaraville Xtreme for $2.00 [10:19:39 p.m.] "
-    "Eskimo Bros can nominate the next player for auction. [10:19:39 p.m.]"
 )
 
 st.set_page_config(page_title="NFO Live Auction", page_icon="🏈", layout="wide")
