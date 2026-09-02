@@ -301,7 +301,12 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
                 body.append(tier_header(pos, t))
             body.append(player_row(p))
     else:
-        body = [player_row(p) for p in sorted(players, key=lambda x: x["adp"])]
+        pool = sorted(players, key=lambda x: x["adp"])
+        if hide_drafted:
+            pool = [p for p in pool if p.get("status") != "drafted"]
+        if stars_only:
+            pool = [p for p in pool if p["name"] in starred]
+        body = [player_row(p) for p in pool]
 
     table = (
         '<style>.lb td{padding:6px 9px;} .lb th{padding:8px 9px;} '
@@ -321,17 +326,9 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
         '<th style="text-align:left;">Drafted by</th></tr></thead>'
         '<tbody>' + "".join(body) + '</tbody></table></div>')
 
-    # ALL mode: hide-drafted / targets-only are applied client-side so they persist across
-    # the auto-refresh. Single-position mode is already filtered + tier-grouped server-side.
+    # all filtering (position, hide-drafted, targets-only) is applied server-side above,
+    # so the board renders in the main page (st.markdown) where the star links can navigate.
     js = ''
-    if not single:
-        js = ('<script>'
-              f'var H={"true" if hide_drafted else "false"},'
-              f'S={"true" if stars_only else "false"};'
-              'document.querySelectorAll("tbody tr").forEach(function(r){'
-              'if(!r.dataset.pos)return;'
-              'var ok=!(H&&r.dataset.drafted=="1")&&!(S&&r.dataset.star!="1");'
-              'r.style.display=ok?"":"none";});</script>')
 
     # a white card so it stays readable regardless of Streamlit's light/dark theme
     return ('<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#111;'
@@ -577,12 +574,13 @@ with tab_live:
         stars_only = fc3.checkbox("⭐ Targets only", key="stars_only")
         walk_pct = fc4.radio("Walk", ["90th", "75th"], horizontal=True,
                              key="walk_pct", label_visibility="collapsed")
-        components.html(
+        # render in the main page (not an iframe) so the ☆ star links can navigate the URL
+        st.markdown(
             render_live_board(board_players, tiers, market, budget, on_clock=on_clock,
                               nominated_key=(nom_player["key"] if nom_player else None),
                               pos_filter=pos_filter, hide_drafted=hide_drafted, walk_pct=walk_pct,
                               starred=starred, stars_only=stars_only),
-            height=840, scrolling=True)
+            unsafe_allow_html=True)
     else:
         st.warning("The live board needs **nfo_2026_draft_board.html** one folder up "
                    "(the repo root). Run build_draft_board.py to generate it.")
