@@ -29,6 +29,8 @@ except Exception:
     HAS_AUTOREFRESH = False
 
 HERE = Path(__file__).resolve().parent
+# custom component that renders the board HTML and owns the click-to-star highlight
+_star_board = components.declare_component("nfo_star_board", path=str(HERE / "star_board"))
 DEMO_MSG = ""
 
 st.set_page_config(page_title="NFO Live Auction", page_icon="🏈", layout="wide")
@@ -131,23 +133,9 @@ def render_nomination(p, market):
 def render_live_board(players, tiers, market, budget, on_clock=None, nominated_key=None,
                       pos_filter="ALL", hide_drafted=False, walk_pct="90th",
                       starred=None, stars_only=False):
-    """A dense, readable, live board: market bar + tier watch + full price list."""
-    starred = set(starred or [])
-    import urllib.parse as _url
-
-    def _star_href(name):
-        """Toggle this player in the URL's ?stars= list, preserving the current view."""
-        q = {"stars": "~".join(sorted(starred ^ {name}))}
-        if pos_filter and pos_filter != "ALL":
-            q["pos"] = pos_filter
-        if walk_pct and walk_pct != "90th":
-            q["walk"] = walk_pct
-        if hide_drafted:
-            q["hide"] = "1"
-        if stars_only:
-            q["only"] = "1"
-        return "?" + _url.urlencode(q)
-
+    """A dense, readable, live board: market bar + tier watch + full price list.
+    Stars are handled by the star_board component (it owns the highlight state), so
+    each row just carries a <span class="star" data-player=...>; this fn doesn't tint."""
     def mkt_chip(pos):
         pct = (market.get(pos, 1.0) - 1) * 100
         col = "#c0392b" if pct > 3 else ("#2a78d6" if pct < -3 else "#6b7280")
@@ -230,17 +218,11 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
             live_cell = (f'<span style="background:#eef2ff;color:#3730a3;font-weight:700;'
                          f'padding:1px 7px;border-radius:5px;">${adj}</span>' if moving
                          else f'<span style="color:#a5a3c9;">${adj}</span>')
-        # ⭐ clickable star toggles ?stars= in the URL; gold rail + wash when on
-        is_star = p["name"] in starred
-        if is_star:
-            if drafted:
-                rowstyle += "box-shadow:inset 4px 0 0 #f59e0b;"
-            elif p["key"] != nominated_key:
-                rowstyle = "background:#fff7e6;box-shadow:inset 4px 0 0 #f59e0b;"
-        _sc, _scol = ("★", "#f59e0b") if is_star else ("☆", "#8b93a0")
-        star_ic = (f'<a class="star" href="{_star_href(p["name"])}" target="_top" '
-                   f'style="text-decoration:none;color:{_scol};cursor:pointer;font-size:1.2em;" '
-                   f'title="{"un-star" if is_star else "star"} {p["name"]}">{_sc}</a> ')
+        # ⭐ the star_board component wires the click + highlight from this span
+        _nm = p["name"].replace('"', "")
+        star_ic = (f'<span class="star" data-player="{_nm}" '
+                   f'style="color:#8b93a0;cursor:pointer;font-size:1.2em;" '
+                   f'title="target {_nm}">☆</span> ')
         tcell = (f'<b style="color:{POS_COLOR.get(pos, "#666")};font-size:.92rem;">{tier}</b>'
                  if tier else '<span style="color:#c7c7c7;">–</span>')
         walk_val = p["p75"] if walk_pct == "75th" else p["p90"]
@@ -248,8 +230,7 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
                f'<span style="color:#c7c7c7;"> – </span>'
                f'<b style="color:#c0392b;">${walk_val}</b>')
         return (
-            f'<tr data-pos="{pos}" data-drafted="{int(drafted)}" data-star="{int(is_star)}" '
-            f'style="{rowstyle}">'
+            f'<tr style="{rowstyle}">'
             f'<td style="text-align:center;">{tcell}</td>'
             f'<td style="color:#6b7280;">{p["adp"]}</td>'
             f'<td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
@@ -290,8 +271,6 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
         pool = [p for p in players if p["pos"] == pos]
         if hide_drafted:
             pool = [p for p in pool if p.get("status") != "drafted"]
-        if stars_only:
-            pool = [p for p in pool if p["name"] in starred]
         pool.sort(key=lambda x: (x.get("tier") or 999, x["adp"]))    # tier order, ADP within
         cur = "___init___"
         for p in pool:
@@ -304,14 +283,11 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
         pool = sorted(players, key=lambda x: x["adp"])
         if hide_drafted:
             pool = [p for p in pool if p.get("status") != "drafted"]
-        if stars_only:
-            pool = [p for p in pool if p["name"] in starred]
         body = [player_row(p) for p in pool]
 
     table = (
         '<style>.lb td{padding:6px 9px;} .lb th{padding:8px 9px;} '
-        '.lb tbody tr{border-bottom:1px solid #eef0f2;} '
-        '.lb a.star:hover{color:#f59e0b !important;}</style>'
+        '.lb tbody tr{border-bottom:1px solid #eef0f2;}</style>'
         '<div style="max-height:620px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:10px;">'
         '<table class="lb" style="width:100%;border-collapse:collapse;font-size:.98rem;color:#111;">'
         '<thead><tr style="position:sticky;top:0;background:#f3f4f6;color:#374151;font-size:.72rem;'
@@ -553,34 +529,20 @@ with tab_live:
                 st.caption("nfo_2026_par_sheet.html not found one folder up (the repo "
                            "root). Run build_par_sheet.py to generate it.")
 
-        # ⭐ targets live in the URL (?stars=...): click the ☆ in any board row and the page
-        # reloads with the toggled set, so it survives. No search bar to clutter the view.
-        starred = [n for n in st.query_params.get("stars", "").split("~") if n]
-        # restore the board controls from the URL on a fresh (reloaded) session, so a
-        # star-click doesn't reset them; after first render each widget owns its state.
-        _qp = st.query_params
-        for _wk, _qk in (("pos_filter", "pos"), ("walk_pct", "walk")):
-            if _wk not in st.session_state and _qp.get(_qk):
-                st.session_state[_wk] = _qp.get(_qk)
-        for _wk, _qk in (("hide_drafted", "hide"), ("stars_only", "only")):
-            if _wk not in st.session_state and _qp.get(_qk) is not None:
-                st.session_state[_wk] = (_qp.get(_qk) == "1")
-
         # board controls as Streamlit widgets so they survive the auto-refresh
-        fc1, fc2, fc3, fc4 = st.columns([3, 1, 1, 1])
+        fc1, fc2, fc3 = st.columns([3, 1, 1])
         pos_filter = fc1.radio("Filter", ["ALL", "RB", "WR", "QB", "TE"], horizontal=True,
                                key="pos_filter", label_visibility="collapsed")
         hide_drafted = fc2.checkbox("Hide drafted", key="hide_drafted")
-        stars_only = fc3.checkbox("⭐ Targets only", key="stars_only")
-        walk_pct = fc4.radio("Walk", ["90th", "75th"], horizontal=True,
+        walk_pct = fc3.radio("Walk", ["90th", "75th"], horizontal=True,
                              key="walk_pct", label_visibility="collapsed")
-        # render in the main page (not an iframe) so the ☆ star links can navigate the URL
-        st.markdown(
-            render_live_board(board_players, tiers, market, budget, on_clock=on_clock,
-                              nominated_key=(nom_player["key"] if nom_player else None),
-                              pos_filter=pos_filter, hide_drafted=hide_drafted, walk_pct=walk_pct,
-                              starred=starred, stars_only=stars_only),
-            unsafe_allow_html=True)
+        st.caption("Click a ☆ in any row to highlight players you're targeting.")
+        # the star_board component renders the board and owns the click-to-star highlight
+        _star_board(html=render_live_board(
+            board_players, tiers, market, budget, on_clock=on_clock,
+            nominated_key=(nom_player["key"] if nom_player else None),
+            pos_filter=pos_filter, hide_drafted=hide_drafted, walk_pct=walk_pct),
+            key="starboard")
     else:
         st.warning("The live board needs **nfo_2026_draft_board.html** one folder up "
                    "(the repo root). Run build_draft_board.py to generate it.")
