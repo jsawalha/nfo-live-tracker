@@ -184,9 +184,11 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
                  f'padding:8px 14px;margin-bottom:10px;font-size:.95rem;">⏳ <b>{on_clock}</b> '
                  f'is on the clock to nominate next.</div>')
 
-    # the price list
-    body = []
-    for p in sorted(players, key=lambda x: x["adp"]):
+    # ---- the price list --------------------------------------------------------
+    POS4 = ("RB", "WR", "QB", "TE")
+    single = pos_filter in POS4          # a single position is selected -> group by tier
+
+    def player_row(p):
         pos, drafted = p["pos"], p.get("status") == "drafted"
         adj = round(p["price"] * market.get(pos, 1.0))
         moving = abs(market.get(pos, 1.0) - 1) >= 0.03
@@ -210,11 +212,9 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
             else:
                 rowstyle = f"background:{tint};" if tint else ""
             namestyle = ""
-            # Live = market-adjusted price, tinted indigo so it reads apart from Mean
             live_cell = (f'<span style="background:#eef2ff;color:#3730a3;font-weight:700;'
                          f'padding:1px 7px;border-radius:5px;">${adj}</span>' if moving
                          else f'<span style="color:#a5a3c9;">${adj}</span>')
-        # ⭐ target players: gold left-rail + amber wash so they pop out of the list
         is_star = p["name"] in starred
         star_ic = ""
         if is_star:
@@ -229,7 +229,7 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
         rng = (f'<b style="color:#0a7d3f;">${p["buy"]}</b>'
                f'<span style="color:#c7c7c7;"> – </span>'
                f'<b style="color:#c0392b;">${walk_val}</b>')
-        body.append(
+        return (
             f'<tr data-pos="{pos}" data-drafted="{int(drafted)}" data-star="{int(is_star)}" '
             f'style="{rowstyle}">'
             f'<td style="text-align:center;">{tcell}</td>'
@@ -242,6 +242,48 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
             f'<td style="text-align:right;color:#374151;">${p["price"]}</td>'
             f'<td style="text-align:right;white-space:nowrap;">{rng}</td>'
             f'<td style="white-space:nowrap;">{status}</td></tr>')
+
+    def tier_header(pos, t):
+        """A bold, color-banded divider marking where a tier starts (+ its cliff below)."""
+        col = POS_COLOR.get(pos, "#666")
+        if t:
+            d = tiers.get(pos, {}).get(t, {})
+            bits = []
+            if d.get("med"):
+                bits.append(f'median&nbsp;${d["med"]}')
+            if d.get("total"):
+                bits.append(f'{d.get("left", 0)}/{d["total"]} left')
+            meta = ' · '.join(bits)
+            cliff = (f' &nbsp;·&nbsp; <b style="color:#c0392b;">${d["drop"]} cliff below</b>'
+                     if d.get("drop") else '')
+            label = f'TIER&nbsp;{t}'
+        else:
+            meta, cliff, label = '', '', 'UNRANKED'
+        return (
+            f'<tr class="thdr"><td colspan="8" style="background:linear-gradient(90deg,{col}26,{col}08);'
+            f'border-top:3px solid {col};padding:5px 10px;font-weight:800;color:{col};'
+            f'font-size:.8rem;letter-spacing:.03em;">▸ {label}'
+            f'<span style="font-weight:600;color:#6b7280;font-size:.92em;">'
+            f'{("  ·  " + meta) if meta else ""}{cliff}</span></td></tr>')
+
+    body = []
+    if single:
+        pos = pos_filter
+        pool = [p for p in players if p["pos"] == pos]
+        if hide_drafted:
+            pool = [p for p in pool if p.get("status") != "drafted"]
+        if stars_only:
+            pool = [p for p in pool if p["name"] in starred]
+        pool.sort(key=lambda x: (x.get("tier") or 999, x["adp"]))    # tier order, ADP within
+        cur = "___init___"
+        for p in pool:
+            t = p.get("tier")
+            if t != cur:                                             # new tier -> divider band
+                cur = t
+                body.append(tier_header(pos, t))
+            body.append(player_row(p))
+    else:
+        body = [player_row(p) for p in sorted(players, key=lambda x: x["adp"])]
 
     table = (
         '<style>.lb td{padding:6px 9px;} .lb th{padding:8px 9px;} '
@@ -260,15 +302,17 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
         '<th style="text-align:left;">Drafted by</th></tr></thead>'
         '<tbody>' + "".join(body) + '</tbody></table></div>')
 
-    # position filter + hide-drafted are Streamlit widgets now (they persist across the
-    # auto-refresh); apply the chosen values as the board's initial visibility.
-    js = ('<script>'
-          f'var P="{pos_filter}",H={"true" if hide_drafted else "false"},'
-          f'S={"true" if stars_only else "false"};'
-          'document.querySelectorAll("tbody tr").forEach(function(r){'
-          'var ok=(P=="ALL"||r.dataset.pos==P)&&!(H&&r.dataset.drafted=="1")'
-          '&&!(S&&r.dataset.star!="1");'
-          'r.style.display=ok?"":"none";});</script>')
+    # ALL mode: hide-drafted / targets-only are applied client-side so they persist across
+    # the auto-refresh. Single-position mode is already filtered + tier-grouped server-side.
+    js = ''
+    if not single:
+        js = ('<script>'
+              f'var H={"true" if hide_drafted else "false"},'
+              f'S={"true" if stars_only else "false"};'
+              'document.querySelectorAll("tbody tr").forEach(function(r){'
+              'if(!r.dataset.pos)return;'
+              'var ok=!(H&&r.dataset.drafted=="1")&&!(S&&r.dataset.star!="1");'
+              'r.style.display=ok?"":"none";});</script>')
 
     # a white card so it stays readable regardless of Streamlit's light/dark theme
     return ('<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#111;'
