@@ -237,9 +237,9 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
                 rowstyle += "box-shadow:inset 4px 0 0 #f59e0b;"
             elif p["key"] != nominated_key:
                 rowstyle = "background:#fff7e6;box-shadow:inset 4px 0 0 #f59e0b;"
-        _sc, _scol = ("★", "#f59e0b") if is_star else ("☆", "#cbd0d6")
-        star_ic = (f'<a href="{_star_href(p["name"])}" target="_top" '
-                   f'style="text-decoration:none;color:{_scol};cursor:pointer;font-size:1.05em;" '
+        _sc, _scol = ("★", "#f59e0b") if is_star else ("☆", "#8b93a0")
+        star_ic = (f'<a class="star" href="{_star_href(p["name"])}" target="_top" '
+                   f'style="text-decoration:none;color:{_scol};cursor:pointer;font-size:1.2em;" '
                    f'title="{"un-star" if is_star else "star"} {p["name"]}">{_sc}</a> ')
         tcell = (f'<b style="color:{POS_COLOR.get(pos, "#666")};font-size:.92rem;">{tier}</b>'
                  if tier else '<span style="color:#c7c7c7;">–</span>')
@@ -305,7 +305,8 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
 
     table = (
         '<style>.lb td{padding:6px 9px;} .lb th{padding:8px 9px;} '
-        '.lb tbody tr{border-bottom:1px solid #eef0f2;}</style>'
+        '.lb tbody tr{border-bottom:1px solid #eef0f2;} '
+        '.lb a.star:hover{color:#f59e0b !important;}</style>'
         '<div style="max-height:620px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:10px;">'
         '<table class="lb" style="width:100%;border-collapse:collapse;font-size:.98rem;color:#111;">'
         '<thead><tr style="position:sticky;top:0;background:#f3f4f6;color:#374151;font-size:.72rem;'
