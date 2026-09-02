@@ -133,6 +133,21 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
                       starred=None, stars_only=False):
     """A dense, readable, live board: market bar + tier watch + full price list."""
     starred = set(starred or [])
+    import urllib.parse as _url
+
+    def _star_href(name):
+        """Toggle this player in the URL's ?stars= list, preserving the current view."""
+        q = {"stars": "~".join(sorted(starred ^ {name}))}
+        if pos_filter and pos_filter != "ALL":
+            q["pos"] = pos_filter
+        if walk_pct and walk_pct != "90th":
+            q["walk"] = walk_pct
+        if hide_drafted:
+            q["hide"] = "1"
+        if stars_only:
+            q["only"] = "1"
+        return "?" + _url.urlencode(q)
+
     def mkt_chip(pos):
         pct = (market.get(pos, 1.0) - 1) * 100
         col = "#c0392b" if pct > 3 else ("#2a78d6" if pct < -3 else "#6b7280")
@@ -215,14 +230,17 @@ def render_live_board(players, tiers, market, budget, on_clock=None, nominated_k
             live_cell = (f'<span style="background:#eef2ff;color:#3730a3;font-weight:700;'
                          f'padding:1px 7px;border-radius:5px;">${adj}</span>' if moving
                          else f'<span style="color:#a5a3c9;">${adj}</span>')
+        # ⭐ clickable star toggles ?stars= in the URL; gold rail + wash when on
         is_star = p["name"] in starred
-        star_ic = ""
         if is_star:
-            star_ic = '<span style="color:#f59e0b;" title="target">★</span> '
             if drafted:
                 rowstyle += "box-shadow:inset 4px 0 0 #f59e0b;"
             elif p["key"] != nominated_key:
                 rowstyle = "background:#fff7e6;box-shadow:inset 4px 0 0 #f59e0b;"
+        _sc, _scol = ("★", "#f59e0b") if is_star else ("☆", "#cbd0d6")
+        star_ic = (f'<a href="{_star_href(p["name"])}" target="_top" '
+                   f'style="text-decoration:none;color:{_scol};cursor:pointer;font-size:1.05em;" '
+                   f'title="{"un-star" if is_star else "star"} {p["name"]}">{_sc}</a> ')
         tcell = (f'<b style="color:{POS_COLOR.get(pos, "#666")};font-size:.92rem;">{tier}</b>'
                  if tier else '<span style="color:#c7c7c7;">–</span>')
         walk_val = p["p75"] if walk_pct == "75th" else p["p90"]
@@ -537,12 +555,18 @@ with tab_live:
                 st.caption("nfo_2026_par_sheet.html not found one folder up (the repo "
                            "root). Run build_par_sheet.py to generate it.")
 
-        # ⭐ target list — searchable multiselect (survives the auto-refresh via session key).
-        # options always include already-starred names so drafted targets don't vanish.
-        avail = [p["name"] for p in sorted(board_players, key=lambda x: x["adp"])]
-        star_opts = sorted(set(avail) | set(st.session_state.get("star_targets", [])))
-        starred = st.multiselect("⭐ Target players (type to search, then star)", star_opts,
-                                 key="star_targets")
+        # ⭐ targets live in the URL (?stars=...): click the ☆ in any board row and the page
+        # reloads with the toggled set, so it survives. No search bar to clutter the view.
+        starred = [n for n in st.query_params.get("stars", "").split("~") if n]
+        # restore the board controls from the URL on a fresh (reloaded) session, so a
+        # star-click doesn't reset them; after first render each widget owns its state.
+        _qp = st.query_params
+        for _wk, _qk in (("pos_filter", "pos"), ("walk_pct", "walk")):
+            if _wk not in st.session_state and _qp.get(_qk):
+                st.session_state[_wk] = _qp.get(_qk)
+        for _wk, _qk in (("hide_drafted", "hide"), ("stars_only", "only")):
+            if _wk not in st.session_state and _qp.get(_qk) is not None:
+                st.session_state[_wk] = (_qp.get(_qk) == "1")
 
         # board controls as Streamlit widgets so they survive the auto-refresh
         fc1, fc2, fc3, fc4 = st.columns([3, 1, 1, 1])
